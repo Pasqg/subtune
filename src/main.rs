@@ -5,8 +5,9 @@ mod signals;
 mod utils;
 
 fn main() {
-    let sample = signals::SignalSample::from_function(5.0, 96000,
-                                                      |t| signals::sine_signal(t, 440.0));
+    let wavelet = wavelets::morlet(3.0, 440.0);
+    let sample =
+        signals::SignalSample::from_function(3.0, 96000, &|x| wavelet(x).0);
 
-    save_wav("sine440hz.wav", &sample);
+    save_wav("wavelet440hz3s.wav", &sample);
 }

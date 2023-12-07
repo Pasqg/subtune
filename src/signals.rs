@@ -7,7 +7,7 @@ pub struct SignalSample {
 }
 
 impl SignalSample {
-    pub fn from_function(length_t: f64, sample_rate: u32, signal_fn: impl Fn(f64) -> f64) -> Self {
+    pub fn from_function(length_t: f64, sample_rate: u32, signal_fn: &impl Fn(f64) -> f64) -> Self {
         let sample_rate_f64 = sample_rate as f64;
         let samples = (length_t * sample_rate_f64) as usize;
         let mut result = Vec::with_capacity(samples);

@@ -4,10 +4,12 @@ use std::f32::consts::PI;
 
 const PI2: f64 = (2.0 * PI) as f64;
 
-fn morlet() -> impl Fn(f64) -> (f64, f64) {
-    move |x| {
-        let exp = (-x * x / 2.0).exp();
-        let x2pi = PI2 * x;
+pub(crate) fn morlet(duration_s: f64, frequency_hz: f64) -> impl Fn(f64) -> (f64, f64) {
+    move |t| {
+        let k = 2.0;
+        let x = 4.0 * t / duration_s - 2.0;
+        let exp = (-k * x * x).exp();
+        let x2pi = PI2 * x * frequency_hz;
         (x2pi.cos() * exp, x2pi.sin() * exp)
     }
 }
@@ -19,8 +21,12 @@ mod tests {
 
     #[test]
     fn morlet_wavelet() {
-        let wavelet = wavelets::morlet();
-        assert_eq!(wavelet(0.0), (1.0, 0.0));
+        for duration in 1..100 {
+            let wavelet = wavelets::morlet(duration as f64, 1.0);
+            assert_eq!(wavelet(0.0), (0.0003354626279024913, -1.1730830207436842e-10));
+            assert_eq!(wavelet(duration as f64 / 2.0), (1.0, 0.0));
+            assert_eq!(wavelet(duration as f64), (0.0003354626279024913, 1.1730830207436842e-10));
+        }
     }
 
     #[test]
