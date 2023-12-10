@@ -1,6 +1,6 @@
 use crate::signals::SignalSample;
 
-pub(crate) fn save_wav(filename: &str, sample: &SignalSample) {
+pub(crate) fn save_wav(filename: &str, sample: &SignalSample<f64>) {
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate: sample.sample_rate,

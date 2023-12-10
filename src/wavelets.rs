@@ -1,10 +1,11 @@
 mod transform;
 
 use std::f32::consts::PI;
+use crate::math::ComplexNum;
 
 const PI2: f64 = (2.0 * PI) as f64;
 
-pub(crate) fn morlet(duration_s: f64, frequency_hz: f64) -> impl Fn(f64) -> (f64, f64) {
+pub(crate) fn morlet(duration_s: f64, frequency_hz: f64) -> impl Fn(f64) -> ComplexNum {
     move |t| {
         let k = 2.0;
         let x = 4.0 * t / duration_s - 2.0;
