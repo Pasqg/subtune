@@ -13,9 +13,8 @@ fn main() {
         signals::SignalSample::from_signal(3.0, sample_rate, &|t| sine_signal(t, 17.0));
 
     let result = wavelets::transform::wavelet_transform(&sine_samples, &|frequency, sample_rate| {
-        let duration_s = 1.0 / frequency;
-        let wavelet = wavelets::morlet(duration_s, frequency);
-        signals::SignalSample::from_wavelet(duration_s, sample_rate, &|x| wavelet(x))
+        let wavelet = wavelets::morlet(frequency);
+        signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &|x| wavelet(x))
     }, 1.0, 33.0, 16);
 
     println!("{:?}", result[15]);
