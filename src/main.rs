@@ -1,13 +1,15 @@
 use std::time::Instant;
-use crate::signals::{SignalSample, sine_signal};
-use crate::math::{ComplexNum, modulo};
+use crate::signals::sine_signal;
+use crate::visualization::open_window;
 use crate::wavelets::MORLET_HALF_LENGTH;
 
 mod wavelets;
 mod signals;
 mod utils;
 mod math;
+mod visualization;
 
+#[show_image::main]
 fn main() {
     let time = Instant::now();
     let sample_rate = 2048;
@@ -23,5 +25,5 @@ fn main() {
 
     println!("Elapsed {:?}", time.elapsed());
 
-//    save_wav("wavelet440hz3s.wav", &sample);
+    open_window(sine_samples, frequencies, &result);
 }

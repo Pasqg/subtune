@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 hound = "3.5.1"
+show-image = "0.13.1"
