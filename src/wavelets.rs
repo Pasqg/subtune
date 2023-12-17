@@ -4,11 +4,14 @@ use std::f32::consts::PI;
 use crate::math::ComplexNum;
 
 const PI2: f64 = (2.0 * PI) as f64;
-pub(crate) const MORLET_HALF_LENGTH: f64 = 4.0;
+
+const WAVE_NUMBER: f64 = 4.0;
+pub(crate) const MORLET_HALF_LENGTH: f64 = WAVE_NUMBER * 2.0;
 
 pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> ComplexNum {
     move |t| {
-        let x = frequency_hz * t - MORLET_HALF_LENGTH;
+        let d = frequency_hz / WAVE_NUMBER;
+        let x = d * t - 2.0;
         let exp = (-x * x).exp();
         let x2pi = PI2 * t * frequency_hz;
         (x2pi.cos() * exp, x2pi.sin() * exp)

@@ -23,7 +23,7 @@ fn complex_convolution(signal_samples: &Vec<f64>, wavelet_samples: &Vec<ComplexN
             //todo: handle boundary conditions better
             //todo: most likely it shouldn't be full convolution (so convolution duration = signal duration - wavelet duration + 1 sample
             let signal_at = if signal_index + wavelet_index >= signal_len { 0.0 } else { signal_samples[signal_index + wavelet_index] };
-            convolution = complex_sum(convolution, scalar_complex_mul(signal_at, wavelet_samples[wavelet_index]));
+            convolution = complex_sum(convolution, scalar_complex_mul(signal_at / (wavelet_len as f64), wavelet_samples[wavelet_index]));
         }
         convolution_result.push(convolution);
     }
