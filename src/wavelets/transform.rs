@@ -8,22 +8,25 @@ pub(crate) fn wavelet_transform(signal: &SignalSample<f64>, wavelet_factory: &im
     for frequency_index in 0..n_frequencies {
         let frequency = start_frequency + (end_frequency - start_frequency) * (frequency_index as f64) / (n_frequencies as f64);
         let wavelet_samples = wavelet_factory(frequency, signal.sample_rate);
-        result.push(complex_convolution(&signal.samples, &wavelet_samples.samples));
+        let vec = complex_convolution(&signal.samples, &wavelet_samples.samples);
+        result.push(vec.split_at(wavelet_samples.samples.len() - 1).1.to_vec());
     }
     return result;
 }
 
-fn complex_convolution(signal_samples: &Vec<f64>, wavelet_samples: &Vec<ComplexNum>) -> Vec<ComplexNum> {
-    let signal_len = signal_samples.len();
-    let mut convolution_result = Vec::with_capacity(signal_len);
-    let wavelet_len = wavelet_samples.len();
-    for signal_index in 0..signal_len {
+fn complex_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>) -> Vec<ComplexNum> {
+    let signal_len = signal.len() as i64;
+    let kernel_len = kernel.len() as i64;
+
+    let mut convolution_result = Vec::with_capacity(signal_len as usize);
+    for signal_i in -(kernel_len - 1)..signal_len {
         let mut convolution = (0.0, 0.0);
-        for wavelet_index in 0..wavelet_len {
-            //todo: handle boundary conditions better
-            //todo: most likely it shouldn't be full convolution (so convolution duration = signal duration - wavelet duration + 1 sample
-            let signal_at = if signal_index + wavelet_index >= signal_len { 0.0 } else { signal_samples[signal_index + wavelet_index] };
-            convolution = complex_sum(convolution, scalar_complex_mul(signal_at / (wavelet_len as f64), wavelet_samples[wavelet_index]));
+        for kernel_i in 0..kernel_len {
+            if signal_i + kernel_i >= 0 && signal_i + kernel_i < signal_len {
+                let signal_at = signal[(signal_i + kernel_i) as usize];
+                let kernel_at = kernel[(kernel_len - kernel_i - 1) as usize];
+                convolution = complex_sum(convolution, scalar_complex_mul(signal_at / (kernel_len as f64), kernel_at));
+            }
         }
         convolution_result.push(convolution);
     }
@@ -32,6 +35,7 @@ fn complex_convolution(signal_samples: &Vec<f64>, wavelet_samples: &Vec<ComplexN
 
 #[cfg(test)]
 mod tests {
+    use crate::math::assert_complex_vec;
     use crate::signals::SignalSample;
     use crate::wavelets::transform::{complex_convolution, wavelet_transform};
 
@@ -40,8 +44,9 @@ mod tests {
         let signal = vec![0.3, 0.5, -1.0, 0.7];
         let wavelet = vec![(1.0, 0.0), (-2.0, 0.0), (0.5, 0.0)];
 
-        let vec1 = complex_convolution(&signal, &wavelet);
-        assert_eq!(vec1, vec![(0.3 - 1.0 - 0.5, 0.0), (0.5 + 2.0 + 0.35, 0.0), (-1.0 - 1.4, 0.0), (0.7, 0.0)]);
+        let convolution = complex_convolution(&signal, &wavelet);
+        assert_complex_vec(convolution, vec![(0.3 / 3.0, 0.0), (-0.1 / 3.0, 0.0), (-1.85 / 3.0, 0.0),
+                                             (2.95 / 3.0, 0.0), (-1.9 / 3.0, 0.0), (0.35 / 3.0, 0.0)]);
     }
 
     #[test]
@@ -49,8 +54,9 @@ mod tests {
         let signal = vec![0.3, 0.5, -1.0, 0.7];
         let wavelet = vec![(0.0, 1.0), (0.0, -2.0), (0.0, 0.5)];
 
-        let vec1 = complex_convolution(&signal, &wavelet);
-        assert_eq!(vec1, vec![(0.0, 0.3 - 1.0 - 0.5), (0.0, 0.5 + 2.0 + 0.35), (0.0, -1.0 - 1.4), (0.0, 0.7)]);
+        let convolution = complex_convolution(&signal, &wavelet);
+        assert_complex_vec(convolution, vec![(0.0, 0.3 / 3.0), (0.0, -0.1 / 3.0), (0.0, -1.85 / 3.0),
+                                             (0.0, 2.95 / 3.0), (0.0, -1.9 / 3.0), (0.0, 0.35 / 3.0)]);
     }
 
     #[test]
@@ -58,8 +64,9 @@ mod tests {
         let signal = vec![0.3, 0.5, -1.0, 0.7];
         let wavelet = vec![(0.4, 1.0), (0.6, -2.0), (-0.2, 0.5)];
 
-        let vec1 = complex_convolution(&signal, &wavelet);
-        assert_eq!(vec1, vec![(0.12 + 0.3 + 0.2, 0.3 - 1.0 - 0.5), (-0.5399999999999999, 0.5 + 2.0 + 0.35), (-0.4 + 0.42, -1.0 - 1.4), (0.27999999999999997, 0.7)]);
+        let convolution = complex_convolution(&signal, &wavelet);
+        assert_complex_vec(convolution, vec![(0.12 / 3.0, 0.3 / 3.0), (0.38 / 3.0, -0.1 / 3.0), (-0.16 / 3.0, -1.85 / 3.0),
+                                             (-0.42 / 3.0, 2.95 / 3.0), (0.62 / 3.0, -1.9 / 3.0), (-0.14 / 3.0, 0.35 / 3.0)]);
     }
 
     #[test]
@@ -76,6 +83,7 @@ mod tests {
                                               samples: vec![(0.4, 1.0), (0.6, -2.0), (-0.2, 0.5)],
                                           },
                                           1.0, 1.0, 1);
-        assert_eq!(transform[0], vec![(0.12 + 0.3 + 0.2, 0.3 - 1.0 - 0.5), (-0.5399999999999999, 0.5 + 2.0 + 0.35), (-0.4 + 0.42, -1.0 - 1.4), (0.27999999999999997, 0.7)]);
+        assert_complex_vec(transform[0].to_vec(), vec![(-0.16 / 3.0, -1.85 / 3.0), (-0.42 / 3.0, 2.95 / 3.0),
+                                      (0.62 / 3.0, -1.9 / 3.0), (-0.14 / 3.0, 0.35 / 3.0)]);
     }
 }
