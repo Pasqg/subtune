@@ -20,6 +20,7 @@ pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> ComplexNum {
 
 #[cfg(test)]
 mod tests {
+    use crate::math::assert_epsilon;
     use crate::wavelets;
     use crate::wavelets::MORLET_HALF_LENGTH;
 
@@ -34,12 +35,6 @@ mod tests {
             assert_epsilon(wavelet(MORLET_HALF_LENGTH / frequency_f64).1, 0.0);
             assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_f64).0, 0.0);
             assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_f64).1, 0.0);
-        }
-    }
-
-    fn assert_epsilon(actual: f64, expected: f64) {
-        if (expected - actual).abs() > 1e-6 {
-            panic!("Expected {:?} to be equal to {:?} with an epsilon of 1e-6", actual, expected);
         }
     }
 }
