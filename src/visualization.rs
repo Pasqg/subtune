@@ -55,9 +55,9 @@ fn to_rgb8(result: &Vec<Vec<ComplexNum>>, value_to_rgb: &impl Fn(f64) -> (u8, u8
     image_data
 }
 
-pub(crate) fn open_window(sine_samples: SignalSample<f64>, frequencies: u32, result: &Vec<Vec<ComplexNum>>) {
-    let image_data = to_rgb8(&result, &heat_map_color);
-    let image = ImageView::new(ImageInfo::rgb8(sine_samples.samples.len() as u32, frequencies), &image_data);
+pub(crate) fn open_window(sine_samples: &SignalSample<f64>, wavelet_transform: &Vec<Vec<ComplexNum>>) {
+    let image_data = to_rgb8(&wavelet_transform, &heat_map_color);
+    let image = ImageView::new(ImageInfo::rgb8(sine_samples.samples.len() as u32, wavelet_transform.len() as u32), &image_data);
     let window = create_window("Wavelet transform", Default::default()).unwrap();
     window.set_image("image", image).unwrap();
 
