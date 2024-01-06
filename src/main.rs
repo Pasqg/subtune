@@ -12,7 +12,7 @@ mod visualization;
 #[show_image::main]
 fn main() {
     let time = Instant::now();
-    let sample_rate = 2048;
+    let sample_rate = 8192;
     let signal_duration_s = 1;
     let base_frequency = 110.0;
     let sine_samples =
@@ -24,7 +24,7 @@ fn main() {
                                                + 0.1 * sine_signal(t, 9.0 * base_frequency)
         );
 
-    let frequencies = sample_rate;
+    let frequencies = 1000;
     let result = wavelets::transform::wavelet_transform(&sine_samples, &|frequency, sample_rate| {
         let wavelet = wavelets::morlet(frequency);
         signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &|x| wavelet(x))
