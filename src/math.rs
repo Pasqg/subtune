@@ -12,6 +12,10 @@ pub(crate) fn complex_sum(first: ComplexNum, second: ComplexNum) -> ComplexNum {
     (first.0 + second.0, first.1 + second.1)
 }
 
+pub(crate) fn complex_mul(first: ComplexNum, second: ComplexNum) -> ComplexNum {
+    (first.0 * second.0 - first.1 * second.1, first.0 * second.1 + first.1 * second.0)
+}
+
 pub(crate) fn assert_epsilon(actual: f64, expected: f64) {
     if (expected - actual).abs() > 1e-6 {
         panic!("Expected {:?} to be equal to {:?} with an epsilon of 1e-6", actual, expected);
