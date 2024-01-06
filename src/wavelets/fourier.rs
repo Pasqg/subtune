@@ -52,6 +52,19 @@ fn complex_fourier_transform(samples: &Vec<ComplexNum>) -> Vec<ComplexNum> {
     return frequencies;
 }
 
+// Fourier of fourier is N * the signal where after the first element, the elements are reversed
+// FFT(FFT(X)) = N * X[0, N-1, ..., 1]
+// So inverse transform is the transform of the transform, times 1/N, reversing elements after the first
+pub(crate) fn inverse_fast_fourier_transform(transform: &Vec<ComplexNum>) -> Vec<ComplexNum> {
+    let transform = fast_complex_fourier_transform(&transform);
+    let length = transform.len();
+    let mut result = vec![scalar_complex_mul(1.0 / (length as f64), transform[0]); length];
+    for i in 1..length {
+        result[i] = scalar_complex_mul(1.0 / (length as f64), transform[length - i]);
+    }
+    return result;
+}
+
 // This exists because it is faster than generic implementation which would perform extra mul+adds
 pub(crate) fn fast_fourier_transform(samples: &Vec<f64>) -> Vec<ComplexNum> {
     let samples_number = samples.len();
@@ -107,7 +120,7 @@ fn fourier_transform(samples: &Vec<f64>) -> Vec<ComplexNum> {
 #[cfg(test)]
 mod tests {
     use crate::math::{assert_complex_vec};
-    use crate::wavelets::fourier::{complex_fourier_transform};
+    use crate::wavelets::fourier::{complex_fourier_transform, inverse_fast_fourier_transform};
 
     #[test]
     fn test_fourier_transform() {
@@ -148,5 +161,13 @@ mod tests {
         let signal = vec![(-1.0, 0.6), (2.0, -0.1), (3.0, -3.0), (0.0, 0.8)];
         let transform = complex_fourier_transform(&signal);
         assert_complex_vec(transform, vec![(4.0, -1.7), (-4.9, 1.6), (0.0, -3.1), (-3.1, 5.6)]);
+    }
+
+    #[test]
+    fn test_inverse_fft() {
+        let signal = vec![(-1.0, 0.6), (2.0, -0.1), (3.0, -3.0), (0.0, 0.8)];
+        let transform = complex_fourier_transform(&signal);
+        let inverse = inverse_fast_fourier_transform(&transform);
+        assert_complex_vec(signal, inverse);
     }
 }
