@@ -6,7 +6,7 @@ use crate::math::ComplexNum;
 
 const PI2: f64 = (2.0 * PI) as f64;
 
-const WAVE_NUMBER: f64 = 4.0;
+const WAVE_NUMBER: f64 = 16.0;
 pub(crate) const MORLET_HALF_LENGTH: f64 = WAVE_NUMBER * 2.0;
 
 pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> ComplexNum {

@@ -3,12 +3,12 @@ use crate::math::{complex_mul, complex_sum, ComplexNum, scalar_complex_mul};
 use crate::wavelets::fourier::{fast_complex_fourier_transform, fast_fourier_transform, inverse_fast_fourier_transform};
 
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
-pub(crate) fn wavelet_transform(signal: &SignalSample<f64>, wavelet_factory: &impl Fn(f64, u32) -> SignalSample<ComplexNum>,
-                                start_frequency: f64, end_frequency: f64, n_frequencies: u32) -> Vec<Vec<ComplexNum>> {
-    let mut result = Vec::with_capacity(n_frequencies as usize);
-    for frequency_index in 0..n_frequencies {
-        let frequency = start_frequency + (end_frequency - start_frequency) * (frequency_index as f64) / (n_frequencies as f64);
-        let wavelet_samples = wavelet_factory(frequency, signal.sample_rate);
+pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
+                                wavelet_factory: &impl Fn(f64, u32) -> SignalSample<ComplexNum>,
+                                frequencies: &Vec<f64>) -> Vec<Vec<ComplexNum>> {
+    let mut result = Vec::with_capacity(frequencies.len());
+    for frequency_hz in frequencies {
+        let wavelet_samples = wavelet_factory(*frequency_hz, signal.sample_rate);
 
         let convolution = if wavelet_samples.samples.len() >= signal.samples.len() / 20 {
             fourier_convolution(&signal.samples, &wavelet_samples.samples)
@@ -119,12 +119,13 @@ mod tests {
             sample_rate: 3,
             samples: signal,
         };
+        let frequencies = vec![1.0];
         let transform = wavelet_transform(&signal_sample,
                                           &|f, _| SignalSample {
                                               sample_rate: 3,
                                               samples: vec![(0.4, 1.0), (0.6, -2.0), (-0.2, 0.5)],
                                           },
-                                          1.0, 1.0, 1);
+                                          &frequencies);
         assert_complex_vec(transform[0].to_vec(), vec![(-0.16 / 3.0, -1.85 * 3.0), (-0.42 / 3.0, 2.95 / 3.0),
                                                        (0.62 / 3.0, -1.9 / 3.0), (-0.14 / 3.0, 0.35 / 3.0)]);
     }
