@@ -8,17 +8,25 @@ pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
                                 frequencies: &Vec<f64>) -> Vec<Vec<ComplexNum>> {
     let mut result = Vec::with_capacity(frequencies.len());
     for frequency_hz in frequencies {
-        let wavelet_samples = wavelet_factory(*frequency_hz, signal.sample_rate);
+        let wavelet = wavelet_factory(*frequency_hz, signal.sample_rate);
 
-        let convolution = if wavelet_samples.samples.len() >= signal.samples.len() / 20 {
-            fourier_convolution(&signal.samples, &wavelet_samples.samples)
-        } else {
-            complex_convolution(&signal.samples, &wavelet_samples.samples)
-        };
-        let convolution: Vec<ComplexNum> = convolution.iter().map(|c| scalar_complex_mul(1.0 / (wavelet_samples.samples.len() as f64), *c)).collect();
-        result.push(convolution[(wavelet_samples.samples.len() - 1)..(signal.samples.len() + wavelet_samples.samples.len() - 1)].to_vec());
+        let convolution =
+            if should_use_fourier(signal.samples.len() as u32, wavelet.samples.len() as u32) {
+                fourier_convolution(&signal.samples, &wavelet.samples)
+            } else {
+                complex_convolution(&signal.samples, &wavelet.samples)
+            };
+        let convolution: Vec<ComplexNum> = convolution.iter().map(|c| scalar_complex_mul(1.0 / (wavelet.samples.len() as f64), *c)).collect();
+        result.push(convolution[(wavelet.samples.len() - 1)..(signal.samples.len() + wavelet.samples.len() - 1)].to_vec());
     }
     return result;
+}
+
+fn should_use_fourier(signal_len: u32, wavelet_len: u32) -> bool {
+    let convolution_len = round_to_power_2((signal_len + wavelet_len - 1) as i64) as u32;
+    let fourier_complexity = convolution_len.ilog2() * convolution_len;
+    let convolution_complexity = signal_len * wavelet_len;
+    return 8 * fourier_complexity <= convolution_complexity;
 }
 
 fn complex_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>) -> Vec<ComplexNum> {
