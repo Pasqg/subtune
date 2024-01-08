@@ -34,21 +34,21 @@ fn grayscale(value: f64) -> (u8, u8, u8) {
     (b, b, b)
 }
 
-fn find_max_modulo(result: &Vec<Vec<ComplexNum>>) -> f64 {
-    let mut max_modulo = 0.0;
+fn find_max<T: Copy>(result: &Vec<Vec<T>>, transform_fn: &impl Fn(T) -> f64) -> f64 {
+    let mut max = 0.0;
     for row in result {
         for value in row {
-            let value = modulo(*value);
-            if value > max_modulo {
-                max_modulo = value;
+            let value = transform_fn(*value);
+            if value > max {
+                max = value;
             }
         }
     }
-    max_modulo
+    max
 }
 
 fn to_rgb8(result: &Vec<Vec<ComplexNum>>, value_to_rgb: &impl Fn(f64) -> (u8, u8, u8)) -> Vec<u8> {
-    let max_modulo = find_max_modulo(&result);
+    let max_modulo = find_max(&result, &modulo);
     let mut image_data = Vec::new();
     for row in result {
         for value in row {
@@ -71,35 +71,50 @@ pub(crate) fn open_window(sine_samples: &SignalSample<f64>, wavelet_transform: &
 }
 
 pub(crate) fn save_image(file_name: &str, frequencies: u32, sample_rate: u32, samples: u32, wavelet_transform: &Vec<Vec<ComplexNum>>) {
-    let image_data = to_rgb8(&wavelet_transform, &heat_map_color);
+    let (samples, image_data) =
+        sample_transform(frequencies, sample_rate, samples, &wavelet_transform, &avg_fn);
 
-    let (new_width, resized_data) = resample(frequencies, sample_rate, samples, &image_data);
-
-    save_buffer_with_format(file_name, &resized_data, new_width as u32, frequencies,
+    save_buffer_with_format(file_name, &image_data, samples as u32, frequencies,
                             image::ColorType::Rgb8, ImageFormat::Png).unwrap();
 }
 
-fn resample(frequencies: u32, sample_rate: u32, samples: u32, image_data: &Vec<u8>) -> (usize, Vec<u8>) {
+fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform: &Vec<Vec<ComplexNum>>,
+                    aggregation_fn: &impl Fn(f64, ComplexNum, usize) -> f64) -> (usize, Vec<u8>) {
     let chunk_size = (sample_rate / 32) as usize;
     let new_width = samples as usize / chunk_size;
-    let mut resized_data = Vec::with_capacity(frequencies as usize * new_width * 3);
+
+    let frequencies = frequencies as usize;
+    let mut sampled = Vec::with_capacity(frequencies);
     for i in 0..frequencies {
-        let row_offset = (i * samples) as usize;
+        let mut row = Vec::with_capacity(new_width);
         for chunk_index in 0..new_width {
-            let chunk_offset = 3 * row_offset + 3 * chunk_index * chunk_size;
-
-            let mut value = (0, 0, 0);
+            let chunk_offset = chunk_index * chunk_size;
+            let mut value = 0.0;
             for k in 0..chunk_size {
-                value = (value.0 + image_data[chunk_offset] as u32,
-                         value.1 + image_data[chunk_offset + 1] as u32,
-                         value.2 + image_data[chunk_offset + 2] as u32
-                );
+                value = aggregation_fn(value, transform[i][chunk_offset + k], chunk_size);
             }
+            row.push(value);
+        }
+        sampled.push(row);
+    }
 
-            resized_data.push((value.0 / chunk_size as u32) as u8);
-            resized_data.push((value.1 / chunk_size as u32) as u8);
-            resized_data.push((value.2 / chunk_size as u32) as u8);
+    let max = find_max(&sampled, &std::convert::identity);
+    let mut resized_data = Vec::with_capacity(frequencies * new_width * 3);
+    for i in 0..frequencies {
+        for k in 0..new_width {
+            let (r, g, b) = heat_map_color(sampled[i][k] / max);
+            resized_data.push(r);
+            resized_data.push(g);
+            resized_data.push(b);
         }
     }
     (new_width, resized_data)
+}
+
+fn max_fn(previous: f64, value: ComplexNum, partition_size: usize) -> f64 {
+    modulo(value).max(previous)
+}
+
+fn avg_fn(previous: f64, value: ComplexNum, partition_size: usize) -> f64 {
+    previous + modulo(value) / (partition_size as f64)
 }
