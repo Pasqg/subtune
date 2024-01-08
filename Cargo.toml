@@ -7,11 +7,10 @@ edition = "2021"
 hound = "3.5.1"
 show-image = "0.13.1"
 image = "0.24.7"
-
-[profile.release]
-opt-level = 3
+rustfft = "6.1.0"
 
 [profile.profiling]
 inherits = "release"
 debug = true
 strip = false
+opt-level = 3

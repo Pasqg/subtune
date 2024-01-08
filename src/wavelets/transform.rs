@@ -1,13 +1,13 @@
+use rustfft::FftPlanner;
+use rustfft::num_complex::Complex;
 use crate::signals::SignalSample;
-use crate::math::{complex_mul, complex_sum, ComplexNum, scalar_complex_mul};
-use crate::wavelets::fourier::{fast_complex_fourier_transform, fast_fourier_transform, inverse_fast_fourier_transform};
-
+use crate::math::{complex_sum, ComplexNum, scalar_complex_mul};
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
 pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
                                 wavelet_factory: &impl Fn(f64, u32) -> SignalSample<ComplexNum>,
                                 frequencies: &Vec<f64>) -> Vec<Vec<ComplexNum>> {
     let mut result = Vec::with_capacity(frequencies.len());
-    for frequency_hz in frequencies {
+    for frequency_hz in frequencies.iter().rev() {
         let wavelet = wavelet_factory(*frequency_hz, signal.sample_rate);
 
         let convolution =
@@ -26,7 +26,7 @@ fn should_use_fourier(signal_len: u32, wavelet_len: u32) -> bool {
     let convolution_len = round_to_power_2((signal_len + wavelet_len - 1) as i64) as u32;
     let fourier_complexity = convolution_len.ilog2() * convolution_len;
     let convolution_complexity = signal_len * wavelet_len;
-    return 8 * fourier_complexity <= convolution_complexity;
+    return fourier_complexity <= convolution_complexity;
 }
 
 fn complex_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>) -> Vec<ComplexNum> {
@@ -61,18 +61,35 @@ fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>) -> Vec<Compl
     let signal_len = signal.len();
     let kernel_len = kernel.len();
     let convolution_len = signal_len + kernel_len - 1;
-
     let convolution_len = round_to_power_2(convolution_len as i64) as usize;
 
-    let padded_signal = pad(signal, convolution_len, 0.0);
-    let padded_kernel = pad(kernel, convolution_len, (0.0, 0.0));
+    let signal = pad(signal, convolution_len, 0.0);
+    let kernel = pad(kernel, convolution_len, (0.0, 0.0));
 
-    let mut signal_transform = fast_fourier_transform(&padded_signal);
-    let kernel_transform = fast_complex_fourier_transform(&padded_kernel);
-    for i in 0..convolution_len {
-        signal_transform[i] = complex_mul(signal_transform[i], kernel_transform[i]);
+    let mut signal_transform = vec![Complex { re: 0.0, im: 0.0 }; convolution_len];
+    for i in 0..signal_len {
+        signal_transform[i] = Complex { re: signal[i], im: 0.0 };
     }
-    return inverse_fast_fourier_transform(&signal_transform);
+    let mut kernel_transform = vec![Complex { re: 0.0, im: 0.0 }; convolution_len];
+    for i in 0..kernel_len {
+        kernel_transform[i] = Complex { re: kernel[i].0, im: kernel[i].1 };
+    }
+
+    let mut planner = FftPlanner::<f64>::new();
+    let fft = planner.plan_fft_forward(convolution_len);
+    fft.process(&mut signal_transform);
+
+    let fft = planner.plan_fft_forward(convolution_len);
+    fft.process(&mut kernel_transform);
+
+    for i in 0..convolution_len {
+        signal_transform[i] *= kernel_transform[i];
+    }
+
+    let fft = planner.plan_fft_inverse(convolution_len);
+    fft.process(&mut signal_transform);
+
+    return signal_transform.iter().map(|c| (c.re, c.im)).collect();
 }
 
 fn pad<T: Copy>(vector: &Vec<T>, new_length: usize, default: T) -> Vec<T> {
