@@ -8,6 +8,7 @@ hound = "3.5.1"
 show-image = "0.13.1"
 image = "0.24.7"
 rustfft = "6.1.0"
+clap = { version = "4.4.14", features = ["derive"] }
 
 [profile.profiling]
 inherits = "release"

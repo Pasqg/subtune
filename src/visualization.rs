@@ -1,7 +1,6 @@
 use image::{ImageFormat, save_buffer_with_format};
 use show_image::{create_window, ImageInfo, ImageView};
 use crate::math::{ComplexNum, modulo};
-use crate::signals::SignalSample;
 
 fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
@@ -61,21 +60,25 @@ fn to_rgb8(result: &Vec<Vec<ComplexNum>>, value_to_rgb: &impl Fn(f64) -> (u8, u8
     image_data
 }
 
-pub(crate) fn open_window(sine_samples: &SignalSample<f64>, wavelet_transform: &Vec<Vec<ComplexNum>>) {
-    let image_data = to_rgb8(&wavelet_transform, &heat_map_color);
-    let image = ImageView::new(ImageInfo::rgb8(sine_samples.samples.len() as u32, wavelet_transform.len() as u32), &image_data);
+pub(crate) fn open_window(width: u32, heigth: u32, image_data: &Vec<u8>) {
+    let image = ImageView::new(ImageInfo::rgb8(width, heigth), &image_data);
     let window = create_window("Wavelet transform", Default::default()).unwrap();
     window.set_image("image", image).unwrap();
 
     loop {};
 }
 
-pub(crate) fn save_image(file_name: &str, frequencies: u32, sample_rate: u32, samples: u32, wavelet_transform: &Vec<Vec<ComplexNum>>) {
+pub(crate) fn output_image(file_name: &str, frequencies: u32, sample_rate: u32, samples: u32,
+                           wavelet_transform: &Vec<Vec<ComplexNum>>, display: bool) {
     let (samples, image_data) =
         sample_transform(frequencies, sample_rate, samples, &wavelet_transform, &avg_fn);
 
     save_buffer_with_format(file_name, &image_data, samples as u32, frequencies,
                             image::ColorType::Rgb8, ImageFormat::Png).unwrap();
+
+    if display {
+        open_window(samples as u32, frequencies, &image_data);
+    }
 }
 
 fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform: &Vec<Vec<ComplexNum>>,
