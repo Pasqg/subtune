@@ -1,27 +1,39 @@
+use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 use rustfft::FftPlanner;
 use rustfft::num_complex::Complex;
 use crate::signals::SignalSample;
+
 use crate::math::{complex_sum, ComplexNum, scalar_complex_mul};
 
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
 pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
-                                wavelet_factory: &impl Fn(f64, u32) -> SignalSample<ComplexNum>,
+                                wavelet_factory: &(impl Fn(f64, u32) -> SignalSample<ComplexNum> + Sync),
                                 frequencies: &Vec<f64>) -> Vec<Vec<ComplexNum>> {
-    let mut result = Vec::with_capacity(frequencies.len());
-    let mut planner = FftPlanner::<f64>::new();
-    for frequency_hz in frequencies.iter().rev() {
-        let wavelet = wavelet_factory(*frequency_hz, signal.sample_rate);
-
-        let convolution =
-            if should_use_fourier(signal.samples.len() as u32, wavelet.samples.len() as u32) {
-                fourier_convolution(&signal.samples, &wavelet.samples, &mut planner)
-            } else {
-                complex_convolution(&signal.samples, &wavelet.samples)
-            };
-        let convolution: Vec<ComplexNum> = convolution.iter().map(|c| scalar_complex_mul(1.0 / (wavelet.samples.len() as f64), *c)).collect();
-        result.push(convolution[(wavelet.samples.len() - 1)..(signal.samples.len() + wavelet.samples.len() - 1)].to_vec());
+    let sample_rate = signal.sample_rate;
+    let signal = &signal.samples;
+    let indexed_frequencies: Vec<(usize, f64)> = (0..frequencies.len()).into_iter()
+        .map(|index| (index, frequencies[frequencies.len() - index - 1]))
+        .collect();
+    let planner = Arc::new(Mutex::new(FftPlanner::<f64>::new()));
+    let indexed_result: Vec<(usize, Vec<ComplexNum>)> = indexed_frequencies.par_iter()
+        .map(|(index, frequency_hz)| {
+            let wavelet = wavelet_factory(*frequency_hz, sample_rate);
+            let convolution =
+                if should_use_fourier(signal.len() as u32, wavelet.samples.len() as u32) {
+                    fourier_convolution(&signal, &wavelet.samples, &planner)
+                } else {
+                    complex_convolution(&signal, &wavelet.samples)
+                };
+            let convolution: Vec<ComplexNum> = convolution.iter().map(|c| scalar_complex_mul(1.0 / (wavelet.samples.len() as f64), *c)).collect();
+            (*index, convolution[(wavelet.samples.len() - 1)..(signal.len() + wavelet.samples.len() - 1)].to_vec())
+        })
+        .collect();
+    let mut transform = vec![Vec::new(); frequencies.len()];
+    for result in indexed_result {
+        transform[result.0] = result.1;
     }
-    return result;
+    return transform;
 }
 
 fn should_use_fourier(signal_len: u32, wavelet_len: u32) -> bool {
@@ -59,7 +71,7 @@ fn round_to_power_2(n: i64) -> i64 {
     return smaller * 2;
 }
 
-fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>, planner: &mut FftPlanner<f64>) -> Vec<ComplexNum> {
+fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>, planner: &Arc<Mutex<FftPlanner<f64>>>) -> Vec<ComplexNum> {
     let signal_len = signal.len();
     let kernel_len = kernel.len();
     let convolution_len = signal_len + kernel_len - 1;
@@ -77,17 +89,17 @@ fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<ComplexNum>, planner: &mu
         kernel_transform[i] = Complex { re: kernel[i].0, im: kernel[i].1 };
     }
 
-    let fft = planner.plan_fft_forward(convolution_len);
+    let fft = planner.lock().unwrap().plan_fft_forward(convolution_len);
     fft.process(&mut signal_transform);
 
-    let fft = planner.plan_fft_forward(convolution_len);
+    let fft = planner.lock().unwrap().plan_fft_forward(convolution_len);
     fft.process(&mut kernel_transform);
 
     for i in 0..convolution_len {
         signal_transform[i] *= kernel_transform[i];
     }
 
-    let fft = planner.plan_fft_inverse(convolution_len);
+    let fft = planner.lock().unwrap().plan_fft_inverse(convolution_len);
     fft.process(&mut signal_transform);
 
     return signal_transform.iter().map(|c| (c.re / (convolution_len as f64), c.im / (convolution_len as f64))).collect();
@@ -103,6 +115,7 @@ fn pad<T: Copy>(vector: &Vec<T>, new_length: usize, default: T) -> Vec<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
     use rustfft::FftPlanner;
     use crate::math::assert_complex_vec;
     use crate::signals::SignalSample;
@@ -177,8 +190,8 @@ mod tests {
         let signal = vec![0.3, 0.5, -1.0, 0.0];
         let wavelet = vec![(0.2, 0.0), (-0.7, 0.0), (0.4, 0.0)];
 
-        let mut planner = FftPlanner::<f64>::new();
-        let fourier_convolution = fourier_convolution(&signal, &wavelet, &mut planner);
+        let planner = Arc::new(Mutex::new(FftPlanner::<f64>::new()));
+        let fourier_convolution = fourier_convolution(&signal, &wavelet, &planner);
 
         let convolution = complex_convolution(&signal, &wavelet);
         let convolution = pad(&convolution, 8, (0.0, 0.0));
