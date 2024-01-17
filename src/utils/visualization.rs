@@ -1,6 +1,7 @@
 use image::{ImageFormat, save_buffer_with_format};
+use num_complex::ComplexFloat;
 use show_image::{create_window, ImageInfo, ImageView};
-use crate::utils::math::{ComplexNum, modulo};
+use num_complex::Complex;
 
 fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
@@ -46,12 +47,12 @@ fn find_max<T: Copy>(result: &Vec<Vec<T>>, transform_fn: &impl Fn(T) -> f64) -> 
     max
 }
 
-fn to_rgb8(result: &Vec<Vec<ComplexNum>>, value_to_rgb: &impl Fn(f64) -> (u8, u8, u8)) -> Vec<u8> {
-    let max_modulo = find_max(&result, &modulo);
+fn to_rgb8(result: &Vec<Vec<Complex<f64>>>, value_to_rgb: &impl Fn(f64) -> (u8, u8, u8)) -> Vec<u8> {
+    let max_modulo = find_max(&result, &|x| x.abs());
     let mut image_data = Vec::new();
     for row in result {
         for value in row {
-            let (r, g, b) = value_to_rgb(modulo(*value) / max_modulo);
+            let (r, g, b) = value_to_rgb(value.abs() / max_modulo);
             image_data.push(r);
             image_data.push(g);
             image_data.push(b);
@@ -69,7 +70,7 @@ pub(crate) fn open_window(width: u32, heigth: u32, image_data: &Vec<u8>) {
 }
 
 pub(crate) fn output_image(file_name: &str, frequencies: u32, sample_rate: u32, samples: u32,
-                           wavelet_transform: &Vec<Vec<ComplexNum>>) -> Vec<u8> {
+                           wavelet_transform: &Vec<Vec<Complex<f64>>>) -> Vec<u8> {
     let (samples, image_data) =
         sample_transform(frequencies, sample_rate, samples, &wavelet_transform, &avg_fn);
 
@@ -79,8 +80,8 @@ pub(crate) fn output_image(file_name: &str, frequencies: u32, sample_rate: u32, 
     return image_data;
 }
 
-fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform: &Vec<Vec<ComplexNum>>,
-                    aggregation_fn: &impl Fn(f64, ComplexNum, usize) -> f64) -> (usize, Vec<u8>) {
+fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform: &Vec<Vec<Complex<f64>>>,
+                    aggregation_fn: &impl Fn(f64, Complex<f64>, usize) -> f64) -> (usize, Vec<u8>) {
     let chunk_size = (sample_rate / 32) as usize;
     let new_width = samples as usize / chunk_size;
 
@@ -112,10 +113,10 @@ fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform:
     (new_width, resized_data)
 }
 
-fn max_fn(previous: f64, value: ComplexNum, partition_size: usize) -> f64 {
-    modulo(value).max(previous)
+fn max_fn(previous: f64, value: Complex<f64>, partition_size: usize) -> f64 {
+    value.abs().max(previous)
 }
 
-fn avg_fn(previous: f64, value: ComplexNum, partition_size: usize) -> f64 {
-    previous + modulo(value) / (partition_size as f64)
+fn avg_fn(previous: f64, value: Complex<f64>, partition_size: usize) -> f64 {
+    previous + value.abs() / (partition_size as f64)
 }

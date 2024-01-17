@@ -1,8 +1,8 @@
+use num_complex::Complex;
+
 pub mod fourier;
 pub mod transform;
 pub mod wavelets;
-
-use crate::utils::math::ComplexNum;
 
 //todo: opposed to SignalStream
 pub struct SignalSample<T> {
@@ -26,8 +26,8 @@ impl SignalSample<f64> {
     }
 }
 
-impl SignalSample<ComplexNum> {
-    pub fn from_wavelet(length_t: f64, sample_rate: u32, signal_fn: &impl Fn(f64) -> ComplexNum) -> Self {
+impl SignalSample<Complex<f64>> {
+    pub fn from_wavelet(length_t: f64, sample_rate: u32, signal_fn: &impl Fn(f64) -> Complex<f64>) -> Self {
         let sample_rate_f64 = sample_rate as f64;
         let samples = (length_t * sample_rate_f64) as usize;
         let mut result = Vec::with_capacity(samples);
