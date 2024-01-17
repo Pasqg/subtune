@@ -22,11 +22,11 @@ struct Cli {
     #[arg(short, long)]
     output: Option<String>,
 
-    /// Number of octaves to analyze, default 10
+    /// Number of octaves to analyze, default 9
     #[arg(short, long)]
     num_octaves: Option<u32>,
 
-    /// Index of first octave (default 0 = C0-B0). Negative allowed.
+    /// Index of first octave (default 1 = C1-B1). Negative allowed.
     #[arg(short, long)]
     start_octave: Option<i32>,
 
@@ -57,8 +57,9 @@ fn main() {
 
     let signal = read_wav(input_file);
 
-    let first_octave = cli.start_octave.unwrap_or(0);
-    let frequencies = (12 * first_octave..(12 * (first_octave + cli.num_octaves.unwrap_or(10) as i32)))
+    let first_octave = cli.start_octave.unwrap_or(1);
+    let octaves = cli.num_octaves.unwrap_or(9) as i32;
+    let frequencies = (12 * first_octave..(12 * (first_octave + octaves)))
         .into_iter().map(|i| CO * (i as f64 / 12.0).exp2()).collect();
 
     let transform = wavelet_transform(&signal, &|frequency, sample_rate| {
