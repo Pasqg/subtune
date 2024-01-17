@@ -1,5 +1,9 @@
 use crate::signals::SignalSample;
 
+pub mod argument_validation;
+pub mod math;
+pub mod visualization;
+
 pub(crate) fn read_wav(file_path: &str) -> SignalSample<f64> {
     let mut reader = hound::WavReader::open(file_path).unwrap();
     SignalSample {

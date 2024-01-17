@@ -1,6 +1,6 @@
 use image::{ImageFormat, save_buffer_with_format};
 use show_image::{create_window, ImageInfo, ImageView};
-use crate::math::{ComplexNum, modulo};
+use crate::utils::math::{ComplexNum, modulo};
 
 fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;

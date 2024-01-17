@@ -39,7 +39,7 @@ pub(crate) fn assert_complex(actual: ComplexNum, expected: ComplexNum) {
 
 #[cfg(test)]
 mod tests {
-    use crate::math::{modulo, scalar_complex_mul};
+    use crate::utils::math::{modulo, scalar_complex_mul};
 
     #[test]
     fn real_number_modulo_is_square() {

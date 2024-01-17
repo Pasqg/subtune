@@ -1,5 +1,5 @@
 use std::f64::consts::PI;
-use crate::math::{complex_sum, ComplexNum, scalar_complex_mul};
+use crate::utils::math::{complex_sum, ComplexNum, scalar_complex_mul};
 
 pub(crate) fn fast_complex_fourier_transform(samples: &Vec<ComplexNum>) -> Vec<ComplexNum> {
     let samples_number = samples.len();
@@ -119,8 +119,8 @@ fn fourier_transform(samples: &Vec<f64>) -> Vec<ComplexNum> {
 
 #[cfg(test)]
 mod tests {
-    use crate::math::{assert_complex_vec};
-    use crate::wavelets::fourier::{complex_fourier_transform, inverse_fast_fourier_transform};
+    use crate::utils::math::{assert_complex_vec};
+    use crate::signals::fourier::{complex_fourier_transform, inverse_fast_fourier_transform};
 
     #[test]
     fn test_fourier_transform() {

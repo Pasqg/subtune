@@ -1,5 +1,8 @@
-use std::f64::consts::PI;
-use crate::math::ComplexNum;
+pub mod fourier;
+pub mod transform;
+pub mod wavelets;
+
+use crate::utils::math::ComplexNum;
 
 //todo: opposed to SignalStream
 pub struct SignalSample<T> {
@@ -37,8 +40,4 @@ impl SignalSample<ComplexNum> {
             samples: result,
         };
     }
-}
-
-pub(crate) fn sine_signal(t: f64, frequency_hz: f64) -> f64 {
-    (t * frequency_hz * 2.0 * PI).sin()
 }

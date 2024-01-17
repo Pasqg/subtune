@@ -1,10 +1,7 @@
-pub mod transform;
-pub mod fourier;
+use std::f64::consts::PI;
+use crate::utils::math::ComplexNum;
 
-use std::f32::consts::PI;
-use crate::math::ComplexNum;
-
-const PI2: f64 = (2.0 * PI) as f64;
+const PI2: f64 = 2.0 * PI;
 
 const WAVE_NUMBER: f64 = 16.0;
 pub(crate) const MORLET_HALF_LENGTH: f64 = WAVE_NUMBER * 2.0;
@@ -21,9 +18,9 @@ pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> ComplexNum {
 
 #[cfg(test)]
 mod tests {
-    use crate::math::assert_epsilon;
-    use crate::wavelets;
-    use crate::wavelets::MORLET_HALF_LENGTH;
+    use crate::utils::math::assert_epsilon;
+    use crate::signals::wavelets;
+    use crate::signals::wavelets::MORLET_HALF_LENGTH;
 
     #[test]
     fn morlet_wavelet() {

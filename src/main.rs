@@ -1,17 +1,15 @@
 use std::time::Instant;
 use clap::Parser;
 use show_image::exit;
-use crate::argument_validation::validate_arguments;
+use signals::wavelets;
+use crate::utils::argument_validation::validate_arguments;
 use crate::utils::read_wav;
-use crate::visualization::{open_window, output_image};
-use crate::wavelets::MORLET_HALF_LENGTH;
+use crate::utils::visualization::{open_window, output_image};
+use crate::signals::wavelets::MORLET_HALF_LENGTH;
+use crate::signals::transform::wavelet_transform;
 
-mod argument_validation;
-mod wavelets;
 mod signals;
 mod utils;
-mod math;
-mod visualization;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -63,19 +61,19 @@ fn main() {
     let frequencies = (12 * first_octave..(12 * (first_octave + cli.num_octaves.unwrap_or(10) as i32)))
         .into_iter().map(|i| CO * (i as f64 / 12.0).exp2()).collect();
 
-    let transform = wavelets::transform::wavelet_transform(&signal, &|frequency, sample_rate| {
+    let transform = wavelet_transform(&signal, &|frequency, sample_rate| {
         let wavelet = wavelets::morlet(frequency);
         signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &|x| wavelet(x))
     }, &frequencies);
 
     let image_data = output_image(output_file, frequencies.len() as u32,
-                 signal.sample_rate, signal.samples.len() as u32,
-                 &transform);
+                                  signal.sample_rate, signal.samples.len() as u32,
+                                  &transform);
 
     println!("Done in {:?}", time.elapsed());
 
     if cli.display {
-        open_window(signal.samples.len() as u32,frequencies.len() as u32, &image_data);
+        open_window(signal.samples.len() as u32, frequencies.len() as u32, &image_data);
     }
 }
 

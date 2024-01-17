@@ -42,7 +42,7 @@ fn valid_output_extension(output_file: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::argument_validation::validate_arguments;
+    use crate::utils::argument_validation::validate_arguments;
 
     #[test]
     fn both_input_and_output_are_valid() {

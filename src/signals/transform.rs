@@ -3,8 +3,7 @@ use rayon::prelude::*;
 use rustfft::FftPlanner;
 use rustfft::num_complex::Complex;
 use crate::signals::SignalSample;
-
-use crate::math::{complex_sum, ComplexNum, scalar_complex_mul};
+use crate::utils::math::{complex_sum, ComplexNum, scalar_complex_mul};
 
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
 pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
@@ -117,9 +116,9 @@ fn pad<T: Copy>(vector: &Vec<T>, new_length: usize, default: T) -> Vec<T> {
 mod tests {
     use std::sync::{Arc, Mutex};
     use rustfft::FftPlanner;
-    use crate::math::assert_complex_vec;
+    use crate::utils::math::assert_complex_vec;
     use crate::signals::SignalSample;
-    use crate::wavelets::transform::{complex_convolution, fourier_convolution, pad, round_to_power_2, wavelet_transform};
+    use crate::signals::transform::{complex_convolution, fourier_convolution, pad, round_to_power_2, wavelet_transform};
 
     #[test]
     fn test_convolution_real_part() {
