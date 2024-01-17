@@ -2,7 +2,6 @@ use crate::signals::SignalSample;
 
 pub(crate) fn read_wav(file_path: &str) -> SignalSample<f64> {
     let mut reader = hound::WavReader::open(file_path).unwrap();
-    println!("Sample rate {:?}", reader.spec());
     SignalSample {
         sample_rate: reader.spec().sample_rate,
         samples: reader.samples::<i16>()

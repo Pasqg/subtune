@@ -69,16 +69,14 @@ pub(crate) fn open_window(width: u32, heigth: u32, image_data: &Vec<u8>) {
 }
 
 pub(crate) fn output_image(file_name: &str, frequencies: u32, sample_rate: u32, samples: u32,
-                           wavelet_transform: &Vec<Vec<ComplexNum>>, display: bool) {
+                           wavelet_transform: &Vec<Vec<ComplexNum>>) -> Vec<u8> {
     let (samples, image_data) =
         sample_transform(frequencies, sample_rate, samples, &wavelet_transform, &avg_fn);
 
     save_buffer_with_format(file_name, &image_data, samples as u32, frequencies,
                             image::ColorType::Rgb8, ImageFormat::Png).unwrap();
 
-    if display {
-        open_window(samples as u32, frequencies, &image_data);
-    }
+    return image_data;
 }
 
 fn sample_transform(frequencies: u32, sample_rate: u32, samples: u32, transform: &Vec<Vec<ComplexNum>>,
