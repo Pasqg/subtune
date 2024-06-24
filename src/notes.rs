@@ -1,0 +1,1 @@
+pub(crate) const C0: f64 = 16.35;
