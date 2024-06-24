@@ -1,4 +1,65 @@
-# Roitelet
+# Subtune
 
-A tool to perform wavelet transform on audio files.
+A rust tool to analyze audio files.
+
+The project aims to be a complete tool to convert audio files into other representations. At the moment, it only
+supports converting wav files into a .png image that contains its wavelet transform.
+
+In the beginning, the focus will be on music files (and streams), using the wavelet transform to extract music sheets.
+
+## Usage
+
+Below a minimal example, which will create a **file.png** with file.wav's wavelet transform.
+
+```
+subtune -i <path/to/file.wav> 
+```
+
+More from --help:
+
+```
+Usage: subtune [OPTIONS] --input <INPUT>
+
+Options:
+-i, --input <INPUT>                Input wav file path
+-o, --output <OUTPUT>              Output image file (png) path
+-n, --num-octaves <NUM_OCTAVES>    Number of octaves to analyze, default 9
+-s, --start-octave <START_OCTAVE>  Index of first octave (default 1 = C1-B1). Negative allowed
+-d, --display                      If this flag is present, opens a window to show the resulting image
+-h, --help                         Print help
+-V, --version                      Print version
+```
+
+## Examples
+
+A random piano sample:
+
+![piano](outputs/piano.png)
+
+A Coldplay song:
+
+![coldplay](outputs/coldplay.png)
+
+## Performance
+
+At 44.1K sample rate, with default parameters, computing a wavelet transform takes about 1/6th of the track duration on
+the test machine (Intel i5 @ 2 GHz, 4 cores). This should be enough for the goal of live audio transcription.
+
+Performance can be further improved to increase frequency resolution and/or decrease run time for
+longer/higher sample rate files.
+
+## Todo
+
+- [ ] Cli improvements (output image parameters, different wavelet types)
+- [ ] Improve code base, extract crates
+- [ ] Support any audio format
+- [ ] Music sheet output
+- [ ] Performance improvements (GPU support)
+- [ ] Transform live audio
+- [ ] Interactive GUI
+
+## License
+
+This project is licensed under [Apache 2.0 License](LICENSE)
+
 
