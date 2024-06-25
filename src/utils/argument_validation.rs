@@ -1,4 +1,10 @@
-pub(crate) fn validate_arguments(input_file: &str, output_file: &str) -> Result<(), String> {
+use std::str::FromStr;
+use crate::utils::visualization::{ColorScheme, ResamplingStrategy};
+
+pub(crate) fn validate_arguments(input_file: &str,
+                                 output_file: &str,
+                                 resampling_strategy: &str,
+                                 color_scheme: &str) -> Result<(), String> {
     let is_input_valid = valid_input_extension(input_file);
     if is_input_valid.is_err() {
         return is_input_valid;
@@ -7,6 +13,16 @@ pub(crate) fn validate_arguments(input_file: &str, output_file: &str) -> Result<
     let is_output_valid = valid_output_extension(output_file);
     if is_output_valid.is_err() {
         return is_output_valid;
+    }
+
+    let is_resampling_strategy_valid = ResamplingStrategy::from_str(resampling_strategy);
+    if is_resampling_strategy_valid.is_err() {
+        return Err(is_resampling_strategy_valid.err().unwrap());
+    }
+
+    let is_color_scheme_valid = ColorScheme::from_str(color_scheme);
+    if is_color_scheme_valid.is_err() {
+        return Err(is_color_scheme_valid.err().unwrap());
     }
 
     Ok(())

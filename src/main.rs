@@ -1,11 +1,13 @@
+use std::str::FromStr;
 use std::time::Instant;
 use clap::Parser;
+use image::ImageFormat;
 use show_image::exit;
 use signals::wavelets;
 use crate::notes::C0;
 use crate::utils::argument_validation::validate_arguments;
 use crate::utils::read_wav;
-use crate::utils::visualization::{open_window, output_image};
+use crate::utils::visualization::{ColorScheme, open_window, output_image, ResamplingStrategy, VisualizationParameters};
 use crate::signals::wavelets::MORLET_HALF_LENGTH;
 use crate::signals::transform::wavelet_transform;
 
@@ -32,6 +34,26 @@ struct Cli {
     #[arg(short, long)]
     start_octave: Option<i32>,
 
+    /// Resampling strategy [max, avg] (default max)
+    #[arg(short, long)]
+    resampling_strategy: Option<String>,
+
+    /// Color scheme [heatmap, grayscale] (default heatmap)
+    #[arg(short, long)]
+    color_scheme: Option<String>,
+
+    /// Pixels per second on the horizontal axis of the resulting image (default 32)
+    #[arg(long)]
+    pixels_per_second: Option<u32>,
+
+    /// Pixels per frequency on the vertical axis of the resulting image (default 6)
+    #[arg(long)]
+    pixels_per_frequency: Option<u32>,
+
+    /// If this flag is present, adds a simple piano roll in the resulting image
+    #[arg(short, long,  default_missing_value = "true")]
+    piano_roll: bool,
+
     /// If this flag is present, opens a window to show the resulting image
     #[arg(short, long, default_missing_value = "true")]
     display: bool,
@@ -45,15 +67,16 @@ fn main() {
     let input_file = cli.input.as_str();
     let output_file_from_input = default_output_file(input_file);
     let output_file = cli.output.unwrap_or(output_file_from_input);
-    let output_file = output_file.as_str();
+    let output_file = output_file;
 
-    let validation_result = validate_arguments(input_file, output_file);
-    if validation_result.is_err() {
-        eprintln!("{}", validation_result.err().unwrap());
-        exit(1);
-    }
+    let resampling_strategy = cli.resampling_strategy.unwrap_or("max".to_string());
+    let resampling_strategy = resampling_strategy.as_str();
+    let color_scheme = cli.color_scheme.unwrap_or("heatmap".to_string());
+    let color_scheme = color_scheme.as_str();
 
-    println!("Will save result to {}", output_file);
+    validate(input_file, &output_file, resampling_strategy, color_scheme);
+
+    println!("Will save result to {}", output_file.as_str());
 
     let signal = read_wav(input_file);
 
@@ -68,12 +91,35 @@ fn main() {
         signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &|x| wavelet(x))
     }, &frequencies);
 
-    let (image_data, width, height) = output_image(output_file, &frequencies, 6, signal.sample_rate, signal.samples.len() as u32, &transform);
+    let parameters = VisualizationParameters {
+        file_name: output_file,
+        frequencies,
+        sample_rate: signal.sample_rate,
+        resampling_strategy: ResamplingStrategy::from_str(resampling_strategy).unwrap(),
+        color_scheme: ColorScheme::from_str(color_scheme).unwrap(),
+        pixels_per_second: cli.pixels_per_second.unwrap_or(32),
+        pixels_per_frequency: cli.pixels_per_frequency.unwrap_or(6),
+        add_piano_roll: cli.piano_roll,
+        image_format: ImageFormat::Png,
+    };
+    let (image_data, width, height) = output_image(&transform, &parameters);
 
     println!("Done in {:?}", time.elapsed());
 
     if cli.display {
         open_window(width as u32, height as u32, &image_data);
+    }
+}
+
+fn validate(input_file: &str, output_file: &String, resampling_strategy: &str, color_scheme: &str) {
+    let validation_result =
+        validate_arguments(input_file,
+                           output_file.as_str(),
+                           resampling_strategy,
+                           color_scheme);
+    if validation_result.is_err() {
+        eprintln!("{}", validation_result.err().unwrap());
+        exit(1);
     }
 }
 

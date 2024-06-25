@@ -21,13 +21,31 @@ More from --help:
 Usage: subtune [OPTIONS] --input <INPUT>
 
 Options:
--i, --input <INPUT>                Input wav file path
--o, --output <OUTPUT>              Output image file (png) path
--n, --num-octaves <NUM_OCTAVES>    Number of octaves to analyze, default 9
--s, --start-octave <START_OCTAVE>  Index of first octave (default 1 = C1-B1). Negative allowed
--d, --display                      If this flag is present, opens a window to show the resulting image
--h, --help                         Print help
--V, --version                      Print version
+  -i, --input <INPUT>
+          Input wav file path
+  -o, --output <OUTPUT>
+          Output image file (png) path
+  -n, --num-octaves <NUM_OCTAVES>
+          Number of octaves to analyze, default 9
+  -s, --start-octave <START_OCTAVE>
+          Index of first octave (default 1 = C1-B1). Negative allowed
+  -r, --resampling-strategy <RESAMPLING_STRATEGY>
+          Resampling strategy [max, avg] (default max)
+  -c, --color-scheme <COLOR_SCHEME>
+          Color scheme [heatmap, grayscale] (default heatmap)
+      --pixels-per-second <PIXELS_PER_SECOND>
+          Pixels per second on the horizontal axis of the resulting image (default 32)
+      --pixels-per-frequency <PIXELS_PER_FREQUENCY>
+          Pixels per frequency on the vertical axis of the resulting image (default 6)
+  -p, --piano-roll
+          If this flag is present, adds a simple piano roll in the resulting image
+  -d, --display
+          If this flag is present, opens a window to show the resulting image
+  -h, --help
+          Print help
+  -V, --version
+          Print version
+
 ```
 
 ## Examples
@@ -50,7 +68,7 @@ longer/higher sample rate files.
 
 ## Todo
 
-- [ ] Cli improvements (output image parameters, different wavelet types)
+- [ ] Different wavelet types
 - [ ] Improve code base, extract crates
 - [ ] Support any audio format
 - [ ] Music sheet output
