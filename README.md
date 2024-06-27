@@ -7,7 +7,24 @@ supports converting wav files into a .png image that contains its wavelet transf
 
 In the beginning, the focus will be on music files (and streams), using the wavelet transform to extract music sheets.
 
+## Examples
+
+A random piano sample:
+
+![piano](outputs/piano.png)
+
+With 3 frequencies per note:
+
+![piano-3freq](outputs/piano-transform.png)
+
+A Coldplay song:
+
+![coldplay](outputs/coldplay.png)
+
 ## Usage
+
+To build to project, simply run
+```cargo build --release```
 
 Below a minimal example, which will create a **file.png** with file.wav's wavelet transform.
 
@@ -48,23 +65,24 @@ Options:
 
 ```
 
-## Examples
-
-A random piano sample:
-
-![piano](outputs/piano.png)
-
-A Coldplay song:
-
-![coldplay](outputs/coldplay.png)
-
 ## Performance
 
 At 44.1K sample rate, with default parameters, computing a wavelet transform takes about 1/6th of the track duration on
-the test machine (Intel i5 @ 2 GHz, 4 cores). This should be enough for the goal of live audio transcription.
+the test machine. This should be enough for the goal of live audio transcription.
 
 Performance can be further improved to increase frequency resolution and/or decrease run time for
 longer/higher sample rate files.
+
+### Benchmarks
+
+Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavelet transform only.
+
+| Samples | Frequencies | Time  |
+|---------|-------------|-------|
+| 140K    | 600         | 3.4s  |
+| 600K    | 600         | 26.2s |
+| 1.7M    | 100         | 6.3s  |
+| 1.7M    | 300         | 20.7s |
 
 ## Todo
 

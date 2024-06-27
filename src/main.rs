@@ -50,6 +50,10 @@ struct Cli {
     #[arg(long)]
     pixels_per_frequency: Option<u32>,
 
+    /// Frequencies per note/pitch, evenly spaced in exponential space (default 1)
+    #[arg(short, long)]
+    frequencies_per_note: Option<u32>,
+
     /// If this flag is present, adds a simple piano roll in the resulting image
     #[arg(short, long, default_missing_value = "true")]
     piano_roll: bool,
@@ -80,8 +84,10 @@ fn main() {
     let first_octave = cli.start_octave.unwrap_or(1);
     let octaves = cli.num_octaves.unwrap_or(9) as i32;
 
-    let frequencies = (12 * first_octave..(12 * (first_octave + octaves)))
-        .into_iter().map(|i| C0 * (i as f64 / 12.0).exp2()).collect();
+    let frequencies_per_note = cli.frequencies_per_note.unwrap_or(1) as i32;
+    let frequencies: Vec<f64> = (12 * frequencies_per_note * first_octave..(12 * frequencies_per_note * (first_octave + octaves) + 12))
+        .map(|i| C0 * (i as f64 / 12.0 / frequencies_per_note as f64).exp2())
+        .collect();
 
     println!("Transforming {} samples, for {} frequencies. Will save result to {}", signal.samples.len(), frequencies.len(), output_file.as_str());
 
@@ -102,6 +108,8 @@ fn main() {
         image_format: ImageFormat::Png,
     };
     let (image_data, width, height) = output_image(&transform, &parameters);
+
+    println!("Done in {:?}", time.elapsed());
 
     if cli.display {
         open_window(width as u32, height as u32, &image_data);
