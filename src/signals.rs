@@ -19,9 +19,9 @@ impl SignalSample<Complex<f64>> {
         for i in 0..samples {
             result.push(signal_fn(i as f64 / sample_rate_f64));
         }
-        return Self {
+        Self {
             sample_rate,
             samples: result,
-        };
+        }
     }
 }

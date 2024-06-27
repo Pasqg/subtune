@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::time::Duration;
 use image::{ImageFormat, save_buffer_with_format};
 use num_complex::ComplexFloat;
 use show_image::{create_window, ImageInfo, ImageView};
@@ -52,7 +53,7 @@ impl ColorScheme {
         let x = c * (1.0 - (h_prime % 2.0 - 1.0).abs());
         let (r1, g1, b1) = if h_prime < 0.0 {
             (0.0, 0.0, 0.0)
-        } else if h_prime >= 0.0 && h_prime <= 1.0 {
+        } else if (0.0..=1.0).contains(&h_prime) {
             (c, x, 0.0)
         } else if h_prime <= 2.0 {
             (x, c, 0.0)
@@ -69,11 +70,9 @@ impl ColorScheme {
         };
 
         let m = l - c / 2.0;
-        return (
-            ((r1 + m) * 255.0).round() as u8,
-            ((g1 + m) * 255.0).round() as u8,
-            ((b1 + m) * 255.0).round() as u8,
-        );
+        (((r1 + m) * 255.0).round() as u8,
+         ((g1 + m) * 255.0).round() as u8,
+         ((b1 + m) * 255.0).round() as u8)
     }
 }
 
@@ -101,25 +100,20 @@ pub(crate) struct VisualizationParameters {
     pub image_format: ImageFormat,
 }
 
-pub(crate) fn open_window(width: u32, heigth: u32, image_data: &Vec<u8>) {
-    let image = ImageView::new(ImageInfo::rgb8(width, heigth), &image_data);
+pub(crate) fn open_window(width: u32, heigth: u32, image_data: &[u8]) {
+    let image = ImageView::new(ImageInfo::rgb8(width, heigth), image_data);
     let window = create_window("Wavelet transform", Default::default()).unwrap();
     window.set_image("image", image).unwrap();
 
-    loop {};
+    loop {
+        std::thread::sleep(Duration::from_millis(100));
+    };
 }
 
-pub(crate) fn output_image(wavelet_transform: &Vec<Vec<Complex<f64>>>,
+pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<f64>>],
                            visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
     let (image_data, width, height) =
-        transform_to_image(&wavelet_transform,
-                           &visualization_parameters.resampling_strategy,
-                           &visualization_parameters.color_scheme,
-                           &visualization_parameters.frequencies,
-                           visualization_parameters.sample_rate,
-                           visualization_parameters.pixels_per_frequency,
-                           visualization_parameters.pixels_per_second,
-                           visualization_parameters.add_piano_roll);
+        transform_to_image(wavelet_transform, visualization_parameters);
 
     save_buffer_with_format(visualization_parameters.file_name.as_str(),
                             &image_data,
@@ -128,43 +122,38 @@ pub(crate) fn output_image(wavelet_transform: &Vec<Vec<Complex<f64>>>,
                             image::ColorType::Rgb8,
                             visualization_parameters.image_format).unwrap();
 
-    return (image_data, width, height);
+    (image_data, width, height)
 }
 
-fn transform_to_image(transform: &Vec<Vec<Complex<f64>>>,
-                      resampling_strategy: &ResamplingStrategy,
-                      color_scheme: &ColorScheme,
-                      frequencies: &Vec<f64>,
-                      sample_rate: u32,
-                      pixels_per_frequency: u32,
-                      pixels_per_second: u32,
-                      add_piano_roll: bool) -> (Vec<u8>, usize, usize) {
-    let piano_roll_length = if add_piano_roll { 24 } else { 0 };
-    let chunk_size = (sample_rate / pixels_per_second) as usize;
+fn transform_to_image(transform: &[Vec<Complex<f64>>],
+                      visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
+    let piano_roll_length = if visualization_parameters.add_piano_roll { 24 } else { 0 };
+    let chunk_size = (visualization_parameters.sample_rate / visualization_parameters.pixels_per_second) as usize;
     let new_width = piano_roll_length + transform[0].len() / chunk_size;
-    let new_height = transform.len() * pixels_per_frequency as usize;
+    let new_height = transform.len() * visualization_parameters.pixels_per_frequency as usize;
 
     let mut sampled = Vec::with_capacity(new_height);
-    for i in 0..transform.len() {
+    for vec in transform {
         let mut row = Vec::with_capacity(new_width - piano_roll_length);
         for chunk_index in 0..(new_width - piano_roll_length) {
             let chunk_offset = chunk_index * chunk_size;
             let mut value = 0.0;
             for k in 0..chunk_size {
-                value = resampling_strategy.sample(value, transform[i][chunk_offset + k], chunk_size);
+                value = visualization_parameters.resampling_strategy.sample(value, vec[chunk_offset + k], chunk_size);
             }
             row.push(value);
         }
-        for _ in 0..pixels_per_frequency {
+        for _ in 0..visualization_parameters.pixels_per_frequency {
             sampled.push(row.clone());
         }
     }
 
+    let frequencies = &visualization_parameters.frequencies;
     let max = find_max(&sampled, &std::convert::identity);
     let mut resized_data = Vec::with_capacity(new_height * new_width * 3);
     for i in 0..new_height {
-        (0..piano_roll_length).into_iter().for_each(|_| {
-            let frequency = frequencies[frequencies.len() - 1 - (i / (pixels_per_frequency as usize))];
+        (0..piano_roll_length).for_each(|_| {
+            let frequency = frequencies[frequencies.len() - 1 - (i / (visualization_parameters.pixels_per_frequency as usize))];
             let note = ((12.0 * (frequency / 16.35).log2()) % 12.0).round() as i32;
             if note == 1 || note == 3 || note == 6 || note == 8 || note == 10 {
                 resized_data.push(0);
@@ -177,7 +166,7 @@ fn transform_to_image(transform: &Vec<Vec<Complex<f64>>>,
             }
         });
         for k in 0..(new_width - piano_roll_length) {
-            let (r, g, b) = color_scheme.color(sampled[i][k] / max);
+            let (r, g, b) = visualization_parameters.color_scheme.color(sampled[i][k] / max);
             resized_data.push(r);
             resized_data.push(g);
             resized_data.push(b);

@@ -5,15 +5,8 @@ pub(crate) fn validate_arguments(input_file: &str,
                                  output_file: &str,
                                  resampling_strategy: &str,
                                  color_scheme: &str) -> Result<(), String> {
-    let is_input_valid = valid_input_extension(input_file);
-    if is_input_valid.is_err() {
-        return is_input_valid;
-    }
-
-    let is_output_valid = valid_output_extension(output_file);
-    if is_output_valid.is_err() {
-        return is_output_valid;
-    }
+    valid_input_extension(input_file)?;
+    valid_output_extension(output_file)?;
 
     let is_resampling_strategy_valid = ResamplingStrategy::from_str(resampling_strategy);
     if is_resampling_strategy_valid.is_err() {

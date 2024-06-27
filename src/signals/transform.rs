@@ -8,10 +8,10 @@ use crate::utils::math::re;
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
 pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
                                 wavelet_factory: &(impl Fn(f64, u32) -> SignalSample<Complex<f64>> + Sync),
-                                frequencies: &Vec<f64>) -> Vec<Vec<Complex<f64>>> {
+                                frequencies: &[f64]) -> Vec<Vec<Complex<f64>>> {
     let sample_rate = signal.sample_rate;
     let signal = &signal.samples;
-    let indexed_frequencies: Vec<(usize, f64)> = (0..frequencies.len()).into_iter()
+    let indexed_frequencies: Vec<(usize, f64)> = (0..frequencies.len())
         .map(|index| (index, frequencies[frequencies.len() - index - 1]))
         .collect();
     let planner: Arc<Mutex<FftPlanner<f64>>> = Arc::new(Mutex::new(FftPlanner::<f64>::new()));
@@ -20,9 +20,9 @@ pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
             let wavelet = wavelet_factory(*frequency_hz, sample_rate);
             let convolution =
                 if should_use_fourier(signal.len() as u32, wavelet.samples.len() as u32) {
-                    fourier_convolution(&signal, &wavelet.samples, &planner)
+                    fourier_convolution(signal, &wavelet.samples, &planner)
                 } else {
-                    complex_convolution(&signal, &wavelet.samples)
+                    complex_convolution(signal, &wavelet.samples)
                 };
             let convolution: Vec<Complex<f64>> = convolution.iter().map(|c| *c / (wavelet.samples.len() as f64)).collect();
             (*index, convolution[(wavelet.samples.len() - 1)..(signal.len() + wavelet.samples.len() - 1)].to_vec())
@@ -32,17 +32,17 @@ pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
     for result in indexed_result {
         transform[result.0] = result.1;
     }
-    return transform;
+    transform
 }
 
 fn should_use_fourier(signal_len: u32, wavelet_len: u32) -> bool {
     let convolution_len = round_to_power_2((signal_len + wavelet_len - 1) as i64) as u32;
     let fourier_complexity = convolution_len.ilog2() * convolution_len;
     let convolution_complexity = signal_len * wavelet_len;
-    return fourier_complexity <= convolution_complexity;
+    fourier_complexity <= convolution_complexity
 }
 
-fn complex_convolution(signal: &Vec<f64>, kernel: &Vec<Complex<f64>>) -> Vec<Complex<f64>> {
+fn complex_convolution(signal: &[f64], kernel: &[Complex<f64>]) -> Vec<Complex<f64>> {
     let signal_len = signal.len() as i64;
     let kernel_len = kernel.len() as i64;
 
@@ -58,7 +58,7 @@ fn complex_convolution(signal: &Vec<f64>, kernel: &Vec<Complex<f64>>) -> Vec<Com
         }
         convolution_result.push(convolution);
     }
-    return convolution_result;
+    convolution_result
 }
 
 fn round_to_power_2(n: i64) -> i64 {
@@ -67,10 +67,10 @@ fn round_to_power_2(n: i64) -> i64 {
     if n == smaller {
         return smaller;
     }
-    return smaller * 2;
+    smaller * 2
 }
 
-fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<Complex<f64>>, planner: &Arc<Mutex<FftPlanner<f64>>>) -> Vec<Complex<f64>> {
+fn fourier_convolution(signal: &[f64], kernel: &[Complex<f64>], planner: &Arc<Mutex<FftPlanner<f64>>>) -> Vec<Complex<f64>> {
     let signal_len = signal.len();
     let kernel_len = kernel.len();
     let convolution_len = signal_len + kernel_len - 1;
@@ -84,9 +84,7 @@ fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<Complex<f64>>, planner: &
         signal_transform[i] = re(signal[i]);
     }
     let mut kernel_transform = vec![re(0.0); convolution_len];
-    for i in 0..kernel_len {
-        kernel_transform[i] = kernel[i];
-    }
+    kernel_transform[..kernel_len].copy_from_slice(&kernel[..kernel_len]);
 
     let fft = planner.lock().unwrap().plan_fft_forward(convolution_len);
     fft.process(&mut signal_transform);
@@ -105,11 +103,9 @@ fn fourier_convolution(signal: &Vec<f64>, kernel: &Vec<Complex<f64>>, planner: &
     return signal_transform.iter().map(|c| c / convolution_len).collect();
 }
 
-fn pad<T: Copy>(vector: &Vec<T>, new_length: usize, default: T) -> Vec<T> {
+fn pad<T: Copy>(vector: &[T], new_length: usize, default: T) -> Vec<T> {
     let mut padded_kernel = vec![default; new_length];
-    for i in 0..vector.len() {
-        padded_kernel[i] = vector[i];
-    }
+    padded_kernel[..vector.len()].copy_from_slice(vector);
     padded_kernel
 }
 

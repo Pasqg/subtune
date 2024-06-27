@@ -2,10 +2,10 @@ use crate::utils::math::{i, re};
 use num_complex::Complex;
 use std::f64::consts::PI;
 
-pub(crate) fn fast_complex_fourier_transform(samples: &Vec<Complex<f64>>) -> Vec<Complex<f64>> {
+pub(crate) fn fast_complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Complex<f64>> {
     let samples_number = samples.len();
     if samples_number <= 4 {
-        return complex_fourier_transform(&samples);
+        return complex_fourier_transform(samples);
     }
 
     let mut frequencies = vec![re(0.0); samples_number];
@@ -31,43 +31,43 @@ pub(crate) fn fast_complex_fourier_transform(samples: &Vec<Complex<f64>>) -> Vec
         frequencies[k + samples_number / 2] = even_frequencies[k] - odd;
     }
 
-    return frequencies;
+    frequencies
 }
 
-fn complex_fourier_transform(samples: &Vec<Complex<f64>>) -> Vec<Complex<f64>> {
+fn complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Complex<f64>> {
     let samples_number = samples.len();
     let mut frequencies = Vec::with_capacity(samples_number);
     for k in 0..samples_number {
         let mut f = re(0.0);
-        for j in 0..samples_number {
+        for (j, sample) in samples.iter().enumerate() {
             let t = 2.0 * PI * (j * k) as f64 / (samples_number as f64);
             let cos = t.cos();
             let sin = t.sin();
-            f += samples[j] * (cos - i(sin));
+            f += sample * (cos - i(sin));
         }
         frequencies.push(f);
     }
-    return frequencies;
+    frequencies
 }
 
 // Fourier of fourier is N * the signal where after the first element, the elements are reversed
 // FFT(FFT(X)) = N * X[0, N-1, ..., 1]
 // So inverse transform is the transform of the transform, times 1/N, reversing elements after the first
-pub(crate) fn inverse_fast_fourier_transform(transform: &Vec<Complex<f64>>) -> Vec<Complex<f64>> {
-    let transform = fast_complex_fourier_transform(&transform);
+pub(crate) fn inverse_fast_fourier_transform(transform: &[Complex<f64>]) -> Vec<Complex<f64>> {
+    let transform = fast_complex_fourier_transform(transform);
     let length = transform.len();
     let mut result = vec![transform[0] / (length as f64); length];
     for i in 1..length {
         result[i] = transform[length - i] / (length as f64);
     }
-    return result;
+    result
 }
 
 // This exists because it is faster than generic implementation which would perform extra mul+adds
-pub(crate) fn fast_fourier_transform(samples: &Vec<f64>) -> Vec<Complex<f64>> {
+pub(crate) fn fast_fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
     let samples_number = samples.len();
     if samples_number <= 4 {
-        return fourier_transform(&samples);
+        return fourier_transform(samples);
     }
 
     let mut frequencies = vec![re(0.0); samples_number];
@@ -93,23 +93,23 @@ pub(crate) fn fast_fourier_transform(samples: &Vec<f64>) -> Vec<Complex<f64>> {
         frequencies[k + samples_number / 2] = even_frequencies[k] - odd;
     }
 
-    return frequencies;
+    frequencies
 }
 
-fn fourier_transform(samples: &Vec<f64>) -> Vec<Complex<f64>> {
+fn fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
     let samples_number = samples.len();
     let mut frequencies = Vec::with_capacity(samples_number);
     for k in 0..samples_number {
         let mut f = re(0.0);
-        for j in 0..samples_number {
+        for (j, sample) in samples.iter().enumerate() {
             let t = 2.0 * PI * (j * k) as f64 / (samples_number as f64);
             let cos = t.cos();
             let sin = t.sin();
-            f += samples[j] * cos - i(samples[j] * sin);
+            f += sample * cos - i(sample * sin);
         }
         frequencies.push(f);
     }
-    return frequencies;
+    frequencies
 }
 
 #[cfg(test)]

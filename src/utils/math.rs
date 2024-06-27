@@ -14,7 +14,7 @@ pub(crate) fn assert_epsilon(actual: f64, expected: f64) {
     }
 }
 
-pub(crate) fn assert_complex_vec(actual: &Vec<Complex<f64>>, expected: &Vec<Complex<f64>>) {
+pub(crate) fn assert_complex_vec(actual: &[Complex<f64>], expected: &[Complex<f64>]) {
     if actual.len() != expected.len() {
         panic!("Expected size {:?} but got {:?}", expected.len(), actual.len());
     }

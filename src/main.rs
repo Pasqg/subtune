@@ -51,7 +51,7 @@ struct Cli {
     pixels_per_frequency: Option<u32>,
 
     /// If this flag is present, adds a simple piano roll in the resulting image
-    #[arg(short, long,  default_missing_value = "true")]
+    #[arg(short, long, default_missing_value = "true")]
     piano_roll: bool,
 
     /// If this flag is present, opens a window to show the resulting image
@@ -67,7 +67,6 @@ fn main() {
     let input_file = cli.input.as_str();
     let output_file_from_input = default_output_file(input_file);
     let output_file = cli.output.unwrap_or(output_file_from_input);
-    let output_file = output_file;
 
     let resampling_strategy = cli.resampling_strategy.unwrap_or("max".to_string());
     let resampling_strategy = resampling_strategy.as_str();
@@ -75,8 +74,6 @@ fn main() {
     let color_scheme = color_scheme.as_str();
 
     validate(input_file, &output_file, resampling_strategy, color_scheme);
-
-    println!("Will save result to {}", output_file.as_str());
 
     let signal = read_wav(input_file);
 
@@ -86,9 +83,11 @@ fn main() {
     let frequencies = (12 * first_octave..(12 * (first_octave + octaves)))
         .into_iter().map(|i| C0 * (i as f64 / 12.0).exp2()).collect();
 
+    println!("Transforming {} samples, for {} frequencies. Will save result to {}", signal.samples.len(), frequencies.len(), output_file.as_str());
+
     let transform = wavelet_transform(&signal, &|frequency, sample_rate| {
         let wavelet = wavelets::morlet(frequency);
-        signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &|x| wavelet(x))
+        signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &wavelet)
     }, &frequencies);
 
     let parameters = VisualizationParameters {
@@ -104,17 +103,15 @@ fn main() {
     };
     let (image_data, width, height) = output_image(&transform, &parameters);
 
-    println!("Done in {:?}", time.elapsed());
-
     if cli.display {
         open_window(width as u32, height as u32, &image_data);
     }
 }
 
-fn validate(input_file: &str, output_file: &String, resampling_strategy: &str, color_scheme: &str) {
+fn validate(input_file: &str, output_file: &str, resampling_strategy: &str, color_scheme: &str) {
     let validation_result =
         validate_arguments(input_file,
-                           output_file.as_str(),
+                           output_file,
                            resampling_strategy,
                            color_scheme);
     if validation_result.is_err() {
@@ -128,5 +125,5 @@ fn default_output_file(input_file: &str) -> String {
     if split.len() > 1 {
         return split[0..(split.len() - 1)].concat() + "png";
     }
-    return input_file.to_string();
+    input_file.to_string()
 }
