@@ -54,6 +54,10 @@ struct Cli {
     #[arg(short, long)]
     frequencies_per_note: Option<u32>,
 
+    /// Number of threads to use when calculating the wavelet transform (default 16)
+    #[arg(short, long)]
+    threads: Option<u32>,
+
     /// If this flag is present, adds a simple piano roll in the resulting image
     #[arg(short, long, default_missing_value = "true")]
     piano_roll: bool,
@@ -94,7 +98,7 @@ fn main() {
     let transform = wavelet_transform(&signal, &|frequency, sample_rate| {
         let wavelet = wavelets::morlet(frequency);
         signals::SignalSample::from_wavelet(2.0 * MORLET_HALF_LENGTH / frequency, sample_rate, &wavelet)
-    }, &frequencies);
+    }, &frequencies, cli.threads.unwrap_or(16));
 
     let parameters = VisualizationParameters {
         file_name: output_file,

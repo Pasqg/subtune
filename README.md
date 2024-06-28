@@ -5,7 +5,8 @@ A rust tool to analyze audio files.
 The project aims to be a complete tool to convert audio files into other representations. At the moment, it only
 supports converting wav files into a .png image that contains its wavelet transform.
 
-In the beginning, the focus will be on music files (and streams), using the wavelet transform to extract music sheets.
+In the beginning, the focus will be on music files (and streams), using the continuous wavelet transform (CWT) to
+extract music sheets.
 
 ## Examples
 
@@ -54,6 +55,10 @@ Options:
           Pixels per second on the horizontal axis of the resulting image (default 32)
       --pixels-per-frequency <PIXELS_PER_FREQUENCY>
           Pixels per frequency on the vertical axis of the resulting image (default 6)
+  -f, --frequencies-per-note <FREQUENCIES_PER_NOTE>
+          Frequencies per note/pitch, evenly spaced in exponential space (default 1)
+  -t, --threads <THREADS>
+          Number of threads to use when calculating the wavelet transform (default 16)
   -p, --piano-roll
           If this flag is present, adds a simple piano roll in the resulting image
   -d, --display
@@ -62,7 +67,6 @@ Options:
           Print help
   -V, --version
           Print version
-
 ```
 
 ## Performance
@@ -79,10 +83,10 @@ Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavel
 
 | Samples | Frequencies | Time  |
 |---------|-------------|-------|
-| 140K    | 600         | 3.4s  |
-| 600K    | 600         | 26.2s |
-| 1.7M    | 100         | 6.3s  |
-| 1.7M    | 300         | 20.7s |
+| 140K    | 600         | 2.3s  |
+| 600K    | 600         | 12.8s |
+| 1.7M    | 100         | 4.6s  |
+| 1.7M    | 300         | 16.1s |
 
 ## Todo
 
