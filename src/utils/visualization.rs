@@ -4,6 +4,7 @@ use image::{ImageFormat, save_buffer_with_format};
 use num_complex::ComplexFloat;
 use show_image::{create_window, ImageInfo, ImageView};
 use num_complex::Complex;
+use crate::utils::math::FloatType;
 
 pub(crate) enum ResamplingStrategy {
     Map,
@@ -11,10 +12,10 @@ pub(crate) enum ResamplingStrategy {
 }
 
 impl ResamplingStrategy {
-    pub fn sample(&self, previous: f64, value: Complex<f64>, partition_size: usize) -> f64 {
+    pub fn sample(&self, previous: FloatType, value: Complex<FloatType>, partition_size: usize) -> FloatType {
         match self {
             ResamplingStrategy::Map => value.abs().max(previous),
-            ResamplingStrategy::Avg => previous + value.abs() / (partition_size as f64),
+            ResamplingStrategy::Avg => previous + value.abs() / (partition_size as FloatType),
         }
     }
 }
@@ -37,7 +38,7 @@ pub(crate) enum ColorScheme {
 }
 
 impl ColorScheme {
-    pub fn color(&self, value: f64) -> (u8, u8, u8) {
+    pub fn color(&self, value: FloatType) -> (u8, u8, u8) {
         match self {
             ColorScheme::HeatMap => Self::hsl_to_rgb((1.0 - value) * 240.0, 1.0, 0.5),
             ColorScheme::Grayscale => {
@@ -47,7 +48,7 @@ impl ColorScheme {
         }
     }
 
-    fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
+    fn hsl_to_rgb(h: FloatType, s: FloatType, l: FloatType) -> (u8, u8, u8) {
         let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
         let h_prime = h / 60.0;
         let x = c * (1.0 - (h_prime % 2.0 - 1.0).abs());
@@ -90,7 +91,7 @@ impl FromStr for ColorScheme {
 
 pub(crate) struct VisualizationParameters {
     pub file_name: String,
-    pub frequencies: Vec<f64>,
+    pub frequencies: Vec<FloatType>,
     pub sample_rate: u32,
     pub resampling_strategy: ResamplingStrategy,
     pub color_scheme: ColorScheme,
@@ -110,7 +111,7 @@ pub(crate) fn open_window(width: u32, heigth: u32, image_data: &[u8]) {
     };
 }
 
-pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<f64>>],
+pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<FloatType>>],
                            visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
     let (image_data, width, height) =
         transform_to_image(wavelet_transform, visualization_parameters);
@@ -125,7 +126,7 @@ pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<f64>>],
     (image_data, width, height)
 }
 
-fn transform_to_image(transform: &[Vec<Complex<f64>>],
+fn transform_to_image(transform: &[Vec<Complex<FloatType>>],
                       visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
     let piano_roll_length = if visualization_parameters.add_piano_roll { 24 } else { 0 };
     let chunk_size = (visualization_parameters.sample_rate / visualization_parameters.pixels_per_second) as usize;
@@ -175,7 +176,7 @@ fn transform_to_image(transform: &[Vec<Complex<f64>>],
     (resized_data, new_width, new_height)
 }
 
-fn find_max<T: Copy>(result: &Vec<Vec<T>>, transform_fn: &impl Fn(T) -> f64) -> f64 {
+fn find_max<T: Copy>(result: &Vec<Vec<T>>, transform_fn: &impl Fn(T) -> FloatType) -> FloatType {
     let mut max = 0.0;
     for row in result {
         for value in row {

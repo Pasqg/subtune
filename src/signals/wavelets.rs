@@ -1,13 +1,12 @@
-use std::f64::consts::PI;
 use num_complex::Complex;
-use crate::utils::math::i;
+use crate::utils::math::{FloatType, i};
 
-const PI2: f64 = 2.0 * PI;
+const PI2: FloatType = 2.0 * std::f64::consts::PI as FloatType;
 
-const WAVE_NUMBER: f64 = 16.0;
-pub(crate) const MORLET_HALF_LENGTH: f64 = WAVE_NUMBER * 2.0;
+const WAVE_NUMBER: FloatType = 16.0;
+pub(crate) const MORLET_HALF_LENGTH: FloatType = WAVE_NUMBER * 2.0;
 
-pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> Complex<f64> {
+pub(crate) fn morlet(frequency_hz: FloatType) -> impl Fn(FloatType) -> Complex<FloatType> {
     move |t| {
         let d = frequency_hz / WAVE_NUMBER;
         let x = d * t - 2.0;
@@ -19,21 +18,21 @@ pub(crate) fn morlet(frequency_hz: f64) -> impl Fn(f64) -> Complex<f64> {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::math::assert_epsilon;
+    use crate::utils::math::{assert_epsilon, FloatType};
     use crate::signals::wavelets;
     use crate::signals::wavelets::MORLET_HALF_LENGTH;
 
     #[test]
     fn morlet_wavelet() {
         for frequency in 1..100 {
-            let frequency_f64 = frequency as f64;
-            let wavelet = wavelets::morlet(frequency_f64);
+            let frequency_FloatType = frequency as FloatType;
+            let wavelet = wavelets::morlet(frequency_FloatType);
             assert_epsilon(wavelet(0.0).re, 0.0);
             assert_epsilon(wavelet(0.0).im, 0.0);
-            assert_epsilon(wavelet(MORLET_HALF_LENGTH / frequency_f64).re, 1.0);
-            assert_epsilon(wavelet(MORLET_HALF_LENGTH / frequency_f64).im, 0.0);
-            assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_f64).re, 0.0);
-            assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_f64).im, 0.0);
+            assert_epsilon(wavelet(MORLET_HALF_LENGTH / frequency_FloatType).re, 1.0);
+            assert_epsilon(wavelet(MORLET_HALF_LENGTH / frequency_FloatType).im, 0.0);
+            assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_FloatType).re, 0.0);
+            assert_epsilon(wavelet(2.0 * MORLET_HALF_LENGTH / frequency_FloatType).im, 0.0);
         }
     }
 }

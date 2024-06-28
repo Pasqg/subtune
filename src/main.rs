@@ -10,6 +10,7 @@ use crate::utils::read_wav;
 use crate::utils::visualization::{ColorScheme, open_window, output_image, ResamplingStrategy, VisualizationParameters};
 use crate::signals::wavelets::MORLET_HALF_LENGTH;
 use crate::signals::transform::wavelet_transform;
+use crate::utils::math::FloatType;
 
 mod notes;
 mod signals;
@@ -89,8 +90,8 @@ fn main() {
     let octaves = cli.num_octaves.unwrap_or(9) as i32;
 
     let frequencies_per_note = cli.frequencies_per_note.unwrap_or(1) as i32;
-    let frequencies: Vec<f64> = (12 * frequencies_per_note * first_octave..(12 * frequencies_per_note * (first_octave + octaves) + 12))
-        .map(|i| C0 * (i as f64 / 12.0 / frequencies_per_note as f64).exp2())
+    let frequencies: Vec<FloatType> = (12 * frequencies_per_note * first_octave..(12 * frequencies_per_note * (first_octave + octaves) + 12))
+        .map(|i| C0 * (i as FloatType / 12.0 / frequencies_per_note as FloatType).exp2())
         .collect();
 
     println!("Transforming {} samples, for {} frequencies. Will save result to {}", signal.samples.len(), frequencies.len(), output_file.as_str());

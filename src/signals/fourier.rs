@@ -1,8 +1,9 @@
-use crate::utils::math::{i, re};
+use crate::utils::math::{FloatType, i, re};
 use num_complex::Complex;
-use std::f64::consts::PI;
 
-pub(crate) fn fast_complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Complex<f64>> {
+const PI: FloatType = std::f64::consts::PI as FloatType;
+
+pub(crate) fn fast_complex_fourier_transform(samples: &[Complex<FloatType>]) -> Vec<Complex<FloatType>> {
     let samples_number = samples.len();
     if samples_number <= 4 {
         return complex_fourier_transform(samples);
@@ -21,7 +22,7 @@ pub(crate) fn fast_complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Co
     let odd_frequencies = fast_complex_fourier_transform(&odd_samples);
 
     for k in 0..samples_number / 2 {
-        let t = 2.0 * PI * k as f64 / samples_number as f64;
+        let t = 2.0 * PI * k as FloatType / samples_number as FloatType;
         let sin = t.sin();
         let cos = t.cos();
         let cos_odd = cos * odd_frequencies[k];
@@ -34,13 +35,13 @@ pub(crate) fn fast_complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Co
     frequencies
 }
 
-fn complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Complex<f64>> {
+fn complex_fourier_transform(samples: &[Complex<FloatType>]) -> Vec<Complex<FloatType>> {
     let samples_number = samples.len();
     let mut frequencies = Vec::with_capacity(samples_number);
     for k in 0..samples_number {
         let mut f = re(0.0);
         for (j, sample) in samples.iter().enumerate() {
-            let t = 2.0 * PI * (j * k) as f64 / (samples_number as f64);
+            let t = 2.0 * PI * (j * k) as FloatType / (samples_number as FloatType);
             let cos = t.cos();
             let sin = t.sin();
             f += sample * (cos - i(sin));
@@ -53,18 +54,18 @@ fn complex_fourier_transform(samples: &[Complex<f64>]) -> Vec<Complex<f64>> {
 // Fourier of fourier is N * the signal where after the first element, the elements are reversed
 // FFT(FFT(X)) = N * X[0, N-1, ..., 1]
 // So inverse transform is the transform of the transform, times 1/N, reversing elements after the first
-pub(crate) fn inverse_fast_fourier_transform(transform: &[Complex<f64>]) -> Vec<Complex<f64>> {
+pub(crate) fn inverse_fast_fourier_transform(transform: &[Complex<FloatType>]) -> Vec<Complex<FloatType>> {
     let transform = fast_complex_fourier_transform(transform);
     let length = transform.len();
-    let mut result = vec![transform[0] / (length as f64); length];
+    let mut result = vec![transform[0] / (length as FloatType); length];
     for i in 1..length {
-        result[i] = transform[length - i] / (length as f64);
+        result[i] = transform[length - i] / (length as FloatType);
     }
     result
 }
 
 // This exists because it is faster than generic implementation which would perform extra mul+adds
-pub(crate) fn fast_fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
+pub(crate) fn fast_fourier_transform(samples: &[FloatType]) -> Vec<Complex<FloatType>> {
     let samples_number = samples.len();
     if samples_number <= 4 {
         return fourier_transform(samples);
@@ -83,7 +84,7 @@ pub(crate) fn fast_fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
     let odd_frequencies = fast_fourier_transform(&odd_samples);
 
     for k in 0..samples_number / 2 {
-        let t = 2.0 * PI * k as f64 / samples_number as f64;
+        let t = 2.0 * PI * k as FloatType / samples_number as FloatType;
         let sin = t.sin();
         let cos = t.cos();
         let cos_odd = cos * odd_frequencies[k];
@@ -96,13 +97,13 @@ pub(crate) fn fast_fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
     frequencies
 }
 
-fn fourier_transform(samples: &[f64]) -> Vec<Complex<f64>> {
+fn fourier_transform(samples: &[FloatType]) -> Vec<Complex<FloatType>> {
     let samples_number = samples.len();
     let mut frequencies = Vec::with_capacity(samples_number);
     for k in 0..samples_number {
         let mut f = re(0.0);
         for (j, sample) in samples.iter().enumerate() {
-            let t = 2.0 * PI * (j * k) as f64 / (samples_number as f64);
+            let t = 2.0 * PI * (j * k) as FloatType / (samples_number as FloatType);
             let cos = t.cos();
             let sin = t.sin();
             f += sample * cos - i(sample * sin);
@@ -121,7 +122,7 @@ mod tests {
     use crate::signals::fourier::{
         complex_fourier_transform, fast_complex_fourier_transform, inverse_fast_fourier_transform,
     };
-    use crate::utils::math::{assert_complex_vec, i, re};
+    use crate::utils::math::{assert_complex_vec, FloatType, i, re};
 
     #[test]
     fn test_fourier_transform() {
@@ -177,9 +178,9 @@ mod tests {
         assert_complex_vec(&rust_fft_transform, &fft);
     }
 
-    fn rust_fft(signal: &Vec<Complex<f64>>) -> Vec<Complex<f64>> {
+    fn rust_fft(signal: &Vec<Complex<FloatType>>) -> Vec<Complex<FloatType>> {
         let mut transform = signal.clone();
-        let mut planner = FftPlanner::<f64>::new();
+        let mut planner = FftPlanner::<FloatType>::new();
         let fft = planner.plan_fft_forward(transform.len());
         fft.process(&mut transform);
         transform

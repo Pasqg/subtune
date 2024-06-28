@@ -1,1 +1,3 @@
-pub(crate) const C0: f64 = 16.35;
+use crate::utils::math::FloatType;
+
+pub(crate) const C0: FloatType = 16.35;

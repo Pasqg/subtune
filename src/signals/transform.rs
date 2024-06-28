@@ -4,39 +4,39 @@ use rustfft::{Fft, FftPlanner};
 use rustfft::num_complex::Complex;
 use crate::signals::SignalSample;
 use crate::signals::wavelets::MORLET_HALF_LENGTH;
-use crate::utils::math::re;
+use crate::utils::math::{FloatType, re};
 
 /// wavelet_factory: from (frequency, sample rate) to a SignalSample lasting 1/frequency
-pub(crate) fn wavelet_transform(signal: &SignalSample<f64>,
-                                wavelet_factory: &(impl Fn(f64, u32) -> SignalSample<Complex<f64>> + Sync),
-                                frequencies: &[f64],
-                                n_threads: u32) -> Vec<Vec<Complex<f64>>> {
+pub(crate) fn wavelet_transform(signal: &SignalSample<FloatType>,
+                                wavelet_factory: &(impl Fn(FloatType, u32) -> SignalSample<Complex<FloatType>> + Sync),
+                                frequencies: &[FloatType],
+                                n_threads: u32) -> Vec<Vec<Complex<FloatType>>> {
     let sample_rate = signal.sample_rate;
     let signal = &signal.samples;
     let frequencies_num = frequencies.len();
 
-    let max_wavelet_samples = (2.0 * MORLET_HALF_LENGTH * (sample_rate as f64) / frequencies[0]).ceil() as usize;
+    let max_wavelet_samples = (2.0 * MORLET_HALF_LENGTH * (sample_rate as FloatType) / frequencies[0]).ceil() as usize;
     let max_convolution_len = signal.len() + max_wavelet_samples - 1;
 
     let signal_fourier = in_place_fourier(signal, max_convolution_len);
-    let results: Vec<(usize, f64)> = (0..frequencies.len())
+    let results: Vec<(usize, FloatType)> = (0..frequencies.len())
         .map(|index| (index, frequencies[frequencies.len() - index - 1]))
         .collect();
 
-    let mut planner = FftPlanner::<f64>::new();
+    let mut planner = FftPlanner::<FloatType>::new();
     let forward_fft = planner.plan_fft_forward(signal_fourier.len());
     let inverse_fft = planner.plan_fft_inverse(signal_fourier.len());
-    let results: Vec<(usize, Vec<Complex<f64>>)> = results
-        .par_rchunks((frequencies_num as f64 / n_threads as f64).ceil() as usize)
+    let results: Vec<(usize, Vec<Complex<FloatType>>)> = results
+        .par_rchunks((frequencies_num as FloatType / n_threads as FloatType).ceil() as usize)
         .flat_map(|elements| {
             elements.iter().map(|(index, frequency_hz)| {
                 let wavelet = wavelet_factory(*frequency_hz, sample_rate);
                 let convolution =
                     fourier_convolution(&signal_fourier, &wavelet.samples, &forward_fft, &inverse_fft);
                 //todo: merge these two
-                let convolution: Vec<Complex<f64>> = convolution.iter().map(|c| *c / (wavelet.samples.len() as f64)).collect();
+                let convolution: Vec<Complex<FloatType>> = convolution.iter().map(|c| *c / (wavelet.samples.len() as FloatType)).collect();
                 (*index, convolution[(wavelet.samples.len() - 1)..(signal.len() + wavelet.samples.len() - 1)].to_vec())
-            }).collect::<Vec<(usize, Vec<Complex<f64>>)>>()
+            }).collect::<Vec<(usize, Vec<Complex<FloatType>>)>>()
         })
         .collect();
     let mut transform = vec![Vec::new(); frequencies_num];
@@ -55,10 +55,10 @@ fn round_to_power_2(n: i64) -> i64 {
     smaller * 2
 }
 
-fn fourier_convolution(signal_fourier: &[Complex<f64>],
-                       kernel: &[Complex<f64>],
-                       forward_fft: &Arc<dyn Fft<f64>>,
-                       inverse_fft: &Arc<dyn Fft<f64>>) -> Vec<Complex<f64>> {
+fn fourier_convolution(signal_fourier: &[Complex<FloatType>],
+                       kernel: &[Complex<FloatType>],
+                       forward_fft: &Arc<dyn Fft<FloatType>>,
+                       inverse_fft: &Arc<dyn Fft<FloatType>>) -> Vec<Complex<FloatType>> {
     let convolution_len = signal_fourier.len();
 
     let mut kernel_transform = pad(kernel, convolution_len, re(0.0));
@@ -68,7 +68,7 @@ fn fourier_convolution(signal_fourier: &[Complex<f64>],
     let mut signal_transform = vec![re(0.0); convolution_len];
     let signal_transform_slice = &mut signal_transform;
     for i in 0..convolution_len {
-        signal_transform_slice[i] = signal_fourier[i] * kernel_transform[i] / (convolution_len as f64);
+        signal_transform_slice[i] = signal_fourier[i] * kernel_transform[i] / (convolution_len as FloatType);
     }
 
     inverse_fft.process(signal_transform_slice);
@@ -76,7 +76,7 @@ fn fourier_convolution(signal_fourier: &[Complex<f64>],
     signal_transform
 }
 
-fn in_place_fourier(signal: &[f64], length: usize) -> Vec<Complex<f64>> {
+fn in_place_fourier(signal: &[FloatType], length: usize) -> Vec<Complex<FloatType>> {
     let signal_len = signal.len();
     let convolution_len: usize = round_to_power_2(length as i64) as usize;
 
@@ -85,7 +85,7 @@ fn in_place_fourier(signal: &[f64], length: usize) -> Vec<Complex<f64>> {
         signal_transform[i] = re(signal[i]);
     }
 
-    let mut planner = FftPlanner::<f64>::new();
+    let mut planner = FftPlanner::<FloatType>::new();
     let fft = planner.plan_fft_forward(convolution_len);
     fft.process(&mut signal_transform);
 
@@ -102,7 +102,7 @@ fn pad<T: Copy>(vector: &[T], new_length: usize, default: T) -> Vec<T> {
 mod tests {
     use num_complex::Complex;
     use rustfft::FftPlanner;
-    use crate::utils::math::{assert_complex_vec, i, re};
+    use crate::utils::math::{assert_complex_vec, FloatType, i, re};
     use crate::signals::SignalSample;
     use crate::signals::transform::{fourier_convolution, in_place_fourier, pad, round_to_power_2, wavelet_transform};
 
@@ -176,7 +176,7 @@ mod tests {
 
         let signal_fourier = in_place_fourier(&signal, 8);
 
-        let mut planner = FftPlanner::<f64>::new();
+        let mut planner = FftPlanner::<FloatType>::new();
         let fourier_convolution = fourier_convolution(&signal_fourier, &wavelet,
                                                       &planner.plan_fft_forward(8), &planner.plan_fft_inverse(8));
 
@@ -186,7 +186,7 @@ mod tests {
         assert_complex_vec(&convolution, &fourier_convolution);
     }
 
-    fn complex_convolution(signal: &[f64], kernel: &[Complex<f64>]) -> Vec<Complex<f64>> {
+    fn complex_convolution(signal: &[FloatType], kernel: &[Complex<FloatType>]) -> Vec<Complex<FloatType>> {
         let signal_len = signal.len() as i64;
         let kernel_len = kernel.len() as i64;
 

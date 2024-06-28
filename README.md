@@ -81,12 +81,12 @@ longer/higher sample rate files.
 
 Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavelet transform only.
 
-| Samples | Frequencies | Time  |
-|---------|-------------|-------|
-| 140K    | 600         | 2.3s  |
-| 600K    | 600         | 12.8s |
-| 1.7M    | 100         | 4.6s  |
-| 1.7M    | 300         | 16.1s |
+| Samples | Frequencies | Time (f64) | Time (f32) |
+|---------|-------------|------------|------------| 
+| 140K    | 600         | 2.3s       | 1.3s       |
+| 600K    | 600         | 12.8s      | 5.89       |
+| 1.7M    | 100         | 4.6s       | 2.2s       |
+| 1.7M    | 300         | 16.1s      | 6.2s       |
 
 ## Todo
 
@@ -95,6 +95,7 @@ Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavel
 - [ ] Support any audio format
 - [ ] Music sheet output
 - [ ] Performance improvements (GPU support)
+- [ ] Synchrosqueezing 
 - [ ] Transform live audio
 - [ ] Interactive GUI
 
