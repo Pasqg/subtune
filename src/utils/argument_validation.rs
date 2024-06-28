@@ -55,24 +55,24 @@ mod tests {
 
     #[test]
     fn both_input_and_output_are_valid() {
-        assert_eq!(validate_arguments("input.wav", "output.png"), Ok(()));
+        assert_eq!(validate_arguments("input.wav", "output.png", "max", "heatmap"), Ok(()));
     }
 
     #[test]
     fn input_has_wrong_extension() {
-        assert_eq!(validate_arguments("input.wav2", "output.png"),
+        assert_eq!(validate_arguments("input.wav2", "output.png", "max", "heatmap"),
                    Err("Only .wav format is supported, but input format is .wav2!".to_string()));
     }
 
     #[test]
     fn input_has_no_extension() {
-        assert_eq!(validate_arguments("input", "output.png"),
+        assert_eq!(validate_arguments("input", "output.png", "max", "heatmap"),
                    Err("Only .wav format is supported, but input file has no extension!".to_string()));
     }
 
     #[test]
     fn output_has_wrong_extension() {
-        assert_eq!(validate_arguments("input.wav", "output"),
+        assert_eq!(validate_arguments("input.wav", "output", "max", "heatmap"),
                    Err("Only .png format is supported for output, but output file has no extension!".to_string()));
     }
 }
