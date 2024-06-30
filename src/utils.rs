@@ -5,6 +5,14 @@ pub mod argument_validation;
 pub mod math;
 pub mod visualization;
 
+pub(crate) fn file_extension(file_path: &str) -> Option<&str> {
+    let split: Vec<&str> = file_path.split('.').collect();
+    if split.len() == 1 {
+        return None;
+    }
+    Some(split[split.len() - 1])
+}
+
 pub(crate) fn read_wav(file_path: &str) -> SignalSample<FloatType> {
     let mut reader = hound::WavReader::open(file_path).unwrap();
     SignalSample {

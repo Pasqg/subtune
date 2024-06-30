@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use crate::utils::file_extension;
 use crate::utils::visualization::{ColorScheme, ResamplingStrategy};
 
 pub(crate) fn validate_arguments(input_file: &str,
@@ -22,31 +23,21 @@ pub(crate) fn validate_arguments(input_file: &str,
 }
 
 fn valid_input_extension(input_file: &str) -> Result<(), String> {
-    let split: Vec<&str> = input_file.split('.').collect();
-    if split.len() == 1 {
-        return Err("Only .wav format is supported, but input file has no extension!".to_string());
+    let extension = file_extension(input_file);
+    match extension {
+        None => Err("Only .wav format is supported, but input file has no extension!".to_string()),
+        Some("wav") => Ok(()),
+        Some(extension) => Err(format!("Only .wav format is supported, but input format is .{}!", extension)),
     }
-    if split.len() > 1 {
-        let extension = split[split.len() - 1];
-        if extension != "wav" {
-            return Err(format!("Only .wav format is supported, but input format is .{}!", extension));
-        }
-    }
-    Ok(())
 }
 
 fn valid_output_extension(output_file: &str) -> Result<(), String> {
-    let split: Vec<&str> = output_file.split('.').collect();
-    if split.len() == 1 {
-        return Err("Only .png format is supported for output, but output file has no extension!".to_string());
+    let extension = file_extension(output_file);
+    match extension {
+        None => Err("Only .png format is supported for output, but output file has no extension!".to_string()),
+        Some("png") => Ok(()),
+        Some(extension) => Err(format!("Only .png format is supported for output, but output format is .{}!", extension)),
     }
-    if split.len() > 1 {
-        let extension = split[split.len() - 1];
-        if extension != "png" {
-            return Err(format!("Only .png format is supported for output, but output format is .{}!", extension));
-        }
-    }
-    Ok(())
 }
 
 #[cfg(test)]
