@@ -11,6 +11,7 @@ rustfft = "6.2.0"
 clap = { version = "4.5.7", features = ["derive"] }
 rayon = "1.10.0"
 num-complex = "0.4.6"
+minimp3 = "0.5.1"
 
 [profile.profiling]
 inherits = "release"

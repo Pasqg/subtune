@@ -6,7 +6,7 @@ use show_image::exit;
 use signals::wavelets;
 use crate::notes::C0;
 use crate::utils::argument_validation::validate_arguments;
-use crate::utils::read_wav;
+use crate::utils::read_audio;
 use crate::utils::visualization::{ColorScheme, open_window, output_image, ResamplingStrategy, VisualizationParameters};
 use crate::signals::wavelets::MORLET_HALF_LENGTH;
 use crate::signals::transform::wavelet_transform;
@@ -84,7 +84,7 @@ fn main() {
 
     validate(input_file, &output_file, resampling_strategy, color_scheme);
 
-    let signal = read_wav(input_file);
+    let signal = read_audio(input_file);
 
     let first_octave = cli.start_octave.unwrap_or(1);
     let octaves = cli.num_octaves.unwrap_or(9) as i32;

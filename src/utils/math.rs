@@ -1,6 +1,6 @@
 use num_complex::{Complex};
 
-pub(crate) type FloatType = f64;
+pub(crate) type FloatType = f32;
 
 pub(crate) fn i(i: FloatType) -> Complex<FloatType> {
     Complex { re: 0.0, im: i }

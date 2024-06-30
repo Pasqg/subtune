@@ -27,7 +27,8 @@ fn valid_input_extension(input_file: &str) -> Result<(), String> {
     match extension {
         None => Err("Only .wav format is supported, but input file has no extension!".to_string()),
         Some("wav") => Ok(()),
-        Some(extension) => Err(format!("Only .wav format is supported, but input format is .{}!", extension)),
+        Some("mp3") => Ok(()),
+        Some(extension) => Err(format!("Only .wav and .mp3 formats are supported, but input format is .{}!", extension)),
     }
 }
 
