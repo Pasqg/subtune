@@ -1,7 +1,6 @@
 use num_complex::Complex;
 use crate::utils::math::FloatType;
 
-pub mod fourier;
 pub mod transform;
 pub mod wavelets;
 
