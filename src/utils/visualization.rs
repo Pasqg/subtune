@@ -1,8 +1,6 @@
 use std::str::FromStr;
-use std::time::Duration;
 use image::{ImageFormat, save_buffer_with_format};
 use num_complex::ComplexFloat;
-use show_image::{create_window, ImageInfo, ImageView};
 use num_complex::Complex;
 use crate::utils::math::FloatType;
 
@@ -101,18 +99,8 @@ pub(crate) struct VisualizationParameters {
     pub image_format: ImageFormat,
 }
 
-pub(crate) fn open_window(width: u32, heigth: u32, image_data: &[u8]) {
-    let image = ImageView::new(ImageInfo::rgb8(width, heigth), image_data);
-    let window = create_window("Wavelet transform", Default::default()).unwrap();
-    window.set_image("image", image).unwrap();
-
-    loop {
-        std::thread::sleep(Duration::from_millis(100));
-    };
-}
-
 pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<FloatType>>],
-                           visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
+                           visualization_parameters: &VisualizationParameters) {
     let (image_data, width, height) =
         transform_to_image(wavelet_transform, visualization_parameters);
 
@@ -122,8 +110,6 @@ pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<FloatType>>],
                             height as u32,
                             image::ColorType::Rgb8,
                             visualization_parameters.image_format).unwrap();
-
-    (image_data, width, height)
 }
 
 fn transform_to_image(transform: &[Vec<Complex<FloatType>>],

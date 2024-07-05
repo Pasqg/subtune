@@ -1,13 +1,13 @@
+use std::process::exit;
 use std::str::FromStr;
 use std::time::Instant;
 use clap::Parser;
 use image::ImageFormat;
-use show_image::exit;
 use signals::wavelets;
 use crate::notes::C0;
 use crate::utils::argument_validation::validate_arguments;
 use crate::utils::read_audio;
-use crate::utils::visualization::{ColorScheme, open_window, output_image, ResamplingStrategy, VisualizationParameters};
+use crate::utils::visualization::{ColorScheme, output_image, ResamplingStrategy, VisualizationParameters};
 use crate::signals::wavelets::MORLET_HALF_LENGTH;
 use crate::signals::transform::wavelet_transform;
 use crate::utils::math::FloatType;
@@ -62,13 +62,8 @@ struct Cli {
     /// If this flag is present, adds a simple piano roll in the resulting image
     #[arg(short, long, default_missing_value = "true")]
     piano_roll: bool,
-
-    /// If this flag is present, opens a window to show the resulting image
-    #[arg(short, long, default_missing_value = "true")]
-    display: bool,
 }
 
-#[show_image::main]
 fn main() {
     let time = Instant::now();
     let cli = Cli::parse();
@@ -112,13 +107,9 @@ fn main() {
         add_piano_roll: cli.piano_roll,
         image_format: ImageFormat::Png,
     };
-    let (image_data, width, height) = output_image(&transform, &parameters);
+    output_image(&transform, &parameters);
 
     println!("Done in {:?}", time.elapsed());
-
-    if cli.display {
-        open_window(width as u32, height as u32, &image_data);
-    }
 }
 
 fn validate(input_file: &str, output_file: &str, resampling_strategy: &str, color_scheme: &str) {
