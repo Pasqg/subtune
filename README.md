@@ -61,8 +61,6 @@ Options:
           Number of threads to use when calculating the wavelet transform (default 16)
   -p, --piano-roll
           If this flag is present, adds a simple piano roll in the resulting image
-  -d, --display
-          If this flag is present, opens a window to show the resulting image
   -h, --help
           Print help
   -V, --version
@@ -93,7 +91,7 @@ Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavel
 - [ ] Different wavelet types
 - [ ] Improve code base, extract crates
 - [ ] Music sheet output
-- [ ] Synchrosqueezing 
+- [ ] Synchrosqueezing
 - [ ] Transform live audio
 - [ ] Interactive GUI
 - [ ] Performance improvements (GPU support)
