@@ -92,12 +92,12 @@ Tests on MacBook Pro 2019, Intel i5-1038NG7 CPU @ 2.00GHz, 4 cores, timing wavel
 
 - [ ] Different wavelet types
 - [ ] Improve code base, extract crates
-- [ ] Support any audio format
 - [ ] Music sheet output
-- [ ] Performance improvements (GPU support)
 - [ ] Synchrosqueezing 
 - [ ] Transform live audio
 - [ ] Interactive GUI
+- [ ] Performance improvements (GPU support)
+- [ ] Support any audio format
 
 ## License
 

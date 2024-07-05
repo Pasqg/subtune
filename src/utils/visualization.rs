@@ -128,7 +128,9 @@ pub(crate) fn output_image(wavelet_transform: &[Vec<Complex<FloatType>>],
 
 fn transform_to_image(transform: &[Vec<Complex<FloatType>>],
                       visualization_parameters: &VisualizationParameters) -> (Vec<u8>, usize, usize) {
-    let piano_roll_length = if visualization_parameters.add_piano_roll { 24 } else { 0 };
+    let piano_roll_length = if visualization_parameters.add_piano_roll {
+        24.max(visualization_parameters.pixels_per_second / 2).min(128) as usize
+    } else { 0 };
     let chunk_size = (visualization_parameters.sample_rate / visualization_parameters.pixels_per_second) as usize;
     let new_width = piano_roll_length + transform[0].len() / chunk_size;
     let new_height = transform.len() * visualization_parameters.pixels_per_frequency as usize;
