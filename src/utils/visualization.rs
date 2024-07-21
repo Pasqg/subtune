@@ -141,10 +141,10 @@ fn transform_to_image(transform: &[Vec<Complex<FloatType>>],
     let max = find_max(&sampled, &std::convert::identity);
     let mut resized_data = Vec::with_capacity(new_height * new_width * 3);
     for i in 0..new_height {
-        (0..piano_roll_length).for_each(|_| {
+        (0..piano_roll_length).for_each(|k| {
             let frequency = frequencies[frequencies.len() - 1 - (i / (visualization_parameters.pixels_per_frequency as usize))];
             let note = ((12.0 * (frequency / 16.35).log2()) % 12.0).round() as i32;
-            if note == 1 || note == 3 || note == 6 || note == 8 || note == 10 {
+            if k < (piano_roll_length as f32 * 0.8) as usize && (note == 1 || note == 3 || note == 6 || note == 8 || note == 10) {
                 resized_data.push(0);
                 resized_data.push(0);
                 resized_data.push(0);

@@ -8,15 +8,11 @@ supports converting wav files into a .png image that contains its wavelet transf
 In the beginning, the focus will be on music files (and streams), using the continuous wavelet transform (CWT) to
 extract music sheets.
 
-## Examples
+## Examples (with piano roll)
 
 A random piano sample:
 
 ![piano](outputs/piano.png)
-
-With 3 frequencies per note:
-
-![piano-3freq](outputs/piano-transform.png)
 
 A Coldplay song:
 
@@ -40,9 +36,9 @@ Usage: subtune [OPTIONS] --input <INPUT>
 
 Options:
   -i, --input <INPUT>
-          Input wav file path
+          Input file path (only .wav, .mp3)
   -o, --output <OUTPUT>
-          Output image file (png) path
+          Output image file path (only .png)
   -n, --num-octaves <NUM_OCTAVES>
           Number of octaves to analyze, default 9
   -s, --start-octave <START_OCTAVE>

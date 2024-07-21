@@ -19,11 +19,11 @@ mod utils;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Input wav file path
+    /// Input file path (only .wav, .mp3)
     #[arg(short, long)]
     input: String,
 
-    /// Output image file (png) path
+    /// Output image file path (only .png)
     #[arg(short, long)]
     output: Option<String>,
 
